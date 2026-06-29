@@ -1,0 +1,8 @@
+Error: TypeError: 'NoneType' object is not callable
+============================================================
+Traceback (most recent call last):
+  File "D:\AI-Projects\TradingAgents-CN_v1.0.1\plans\_capture_traceback.py", line 69, in <module>
+    trading_graph = TradingAgentsGraph(
+  File "D:\AI-Projects\TradingAgents-CN_v1.0.1\tradingagents\graph\trading_graph.py", line 538, in __init__
+    self.toolkit = Toolkit(config=self.config)
+TypeError: 'NoneType' object is not callable

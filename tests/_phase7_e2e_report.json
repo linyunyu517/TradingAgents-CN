@@ -1,0 +1,62 @@
+{
+  "phase": "7",
+  "name": "end-to-end pipeline verification",
+  "timestamp": "2026-06-19 01:49:09",
+  "passed": 2,
+  "failed": 4,
+  "skipped": 0,
+  "details": [
+    {
+      "name": "_get_data_source_priority_for_sync 返回 efinance",
+      "status": "PASS",
+      "elapsed_s": 1.8
+    },
+    {
+      "name": "TradingAgentsGraph + AgentState + aif + Config",
+      "status": "FAIL",
+      "elapsed_s": 7.38,
+      "error": "RuntimeError: Failed to import transformers.models.auto.processing_auto because of the following error (look up to see its traceback):\nNo module named 'pwd'"
+    },
+    {
+      "name": ".env → config 层验证",
+      "status": "FAIL",
+      "elapsed_s": 0.0,
+      "error": ".env 文件不存在: D:\\AI-Projects\\TradingAgents-CN_v1.0.1\\tests\\.env"
+    },
+    {
+      "name": "MongoDB 认证连接 + CRUD",
+      "status": "PASS",
+      "elapsed_s": 0.02
+    },
+    {
+      "name": "TradingAgentsGraph 构造",
+      "status": "FAIL",
+      "elapsed_s": 1.2,
+      "error": "OpenAIError: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable"
+    },
+    {
+      "name": "or [] 模式覆盖率",
+      "status": "FAIL",
+      "elapsed_s": 0.0,
+      "error": "文件不存在: D:\\AI-Projects\\TradingAgents-CN_v1.0.1\\tests\\tradingagents\\hpc_loop\\aif_integration.py"
+    }
+  ],
+  "errors": [
+    [
+      "TradingAgentsGraph + AgentState + aif + Config",
+      "RuntimeError: Failed to import transformers.models.auto.processing_auto because of the following error (look up to see its traceback):\nNo module named 'pwd'"
+    ],
+    [
+      ".env → config 层验证",
+      ".env 文件不存在: D:\\AI-Projects\\TradingAgents-CN_v1.0.1\\tests\\.env"
+    ],
+    [
+      "TradingAgentsGraph 构造",
+      "OpenAIError: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable"
+    ],
+    [
+      "or [] 模式覆盖率",
+      "文件不存在: D:\\AI-Projects\\TradingAgents-CN_v1.0.1\\tests\\tradingagents\\hpc_loop\\aif_integration.py"
+    ]
+  ]
+}

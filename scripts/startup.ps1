@@ -1,0 +1,262 @@
+# startup.ps1 — TradingAgents-CN 启动编排脚本
+# 方案C: 架构级重写 — PowerShell 启动流程
+# 版本: 1.0.0
+
+param(
+    [string]$ProjectDir,
+    [int]$BackendPort = 8000,
+    [int]$FrontendPort = 3000,
+    [string]$FrontendMode = 'dev',
+    [string]$LogDir = '',
+    [switch]$SkipCheck,
+    [switch]$CleanupOnly
+)
+
+# ============================================================
+# 初始化
+# ============================================================
+$ErrorActionPreference = 'Continue'
+
+# 设置日志
+if (-not $LogDir) { $LogDir = Join-Path $ProjectDir 'logs' }
+$timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+$launcherLog = Join-Path $LogDir "launcher_$timestamp.log"
+
+# 加载模块
+$modulePath = Join-Path (Split-Path $PSCommandPath -Parent) 'startup_lib.psm1'
+Import-Module $modulePath -Force -ErrorAction Stop
+Set-LogPath -Path $launcherLog
+
+Write-Log 'INFO' "=== TradingAgents-CN Launcher v1.0.0 (PowerShell) ==="
+Write-Log 'INFO' "Project: $ProjectDir  Backend: $BackendPort  Frontend: $FrontendPort"
+Write-Log 'INFO' "Log: $launcherLog"
+
+$global:ErrorCount = 0
+
+# ============================================================
+# 辅助函数
+# ============================================================
+function Write-Step {
+    param([string]$Phase, [string]$Message)
+    Write-Host "[$Phase] $Message" -ForegroundColor Magenta
+    Write-Log 'INFO' "[$Phase] $Message"
+}
+
+function Record-Error {
+    param([string]$Message)
+    $global:ErrorCount++
+    Write-Log 'ERROR' $Message
+}
+
+# ============================================================
+# 如果仅清理，直接执行后退出
+# ============================================================
+if ($CleanupOnly) {
+    Write-Step 'CLEANUP' 'Cleaning up ports...'
+    Clear-Port -Port $BackendPort -ForceKillAll
+    Clear-Port -Port $FrontendPort -ForceKillAll
+    Write-Log 'INFO' 'Cleanup complete'
+    exit 0
+}
+
+# ============================================================
+# PHASE 0: 环境检查
+# ============================================================
+Write-Step 'PHASE 0' 'Environment Check'
+$envOk = $true
+
+# 项目目录
+if (-not (Test-Path $ProjectDir)) {
+    Write-Log 'ERROR' "Project directory not found: $ProjectDir"
+    exit 1
+}
+
+# Node.js
+try {
+    $nv = (node --version 2>&1).ToString().Trim()
+    Write-Log 'OK' "Node.js $nv"
+} catch {
+    Record-Error 'Node.js not found'
+    Write-Host '[ERROR] Node.js is required. Install from https://nodejs.org' -ForegroundColor Red
+    $envOk = $false
+}
+
+# Python
+try {
+    $pv = (python --version 2>&1).ToString().Trim()
+    Write-Log 'OK' "Python $pv"
+} catch {
+    Record-Error 'Python not found'
+    Write-Host '[ERROR] Python is required. Install from https://python.org' -ForegroundColor Red
+    $envOk = $false
+}
+
+if (-not $envOk) {
+    Write-Log 'ERROR' 'Environment check failed, aborting'
+    exit 1
+}
+
+# ============================================================
+# PHASE 1: Python 虚拟环境
+# ============================================================
+Write-Step 'PHASE 1' 'Python Virtual Environment'
+$activateScript = $null
+foreach ($v in @('.venv', 'venv')) {
+    $p = Join-Path $ProjectDir $v
+    if (Test-Path $p -PathType Container) { $activateScript = $p; break }
+}
+if ($activateScript) {
+    Write-Log 'OK' "Virtual environment found: $activateScript"
+} else {
+    Write-Log 'INFO' 'No virtual environment found, using system Python'
+}
+
+# ============================================================
+# PHASE 2: 基础设施服务 (MongoDB + Redis)
+# ============================================================
+Write-Step 'PHASE 2' 'Infrastructure Services'
+
+# MongoDB
+$mongoOk = Start-ServiceWithRetry -ServiceName 'MongoDB' -MaxRetries 2 -PortCheck 27017 -PortTimeout 30
+if ($mongoOk) {
+    Write-Log 'OK' 'MongoDB ready'
+} else {
+    Write-Log 'WARN' 'MongoDB service unavailable. Attempting direct fallback...'
+    # Fallback: try direct mongod or docker
+    $mongodOk = $false
+    if (Get-Command mongod -ErrorAction SilentlyContinue) {
+        $mongoData = Join-Path $ProjectDir 'data\mongodb'
+        if (-not (Test-Path $mongoData)) { New-Item -ItemType Directory -Path $mongoData -Force | Out-Null }
+        Start-Process -FilePath 'cmd.exe' -ArgumentList "/c start `"MongoDB`" /MIN mongod --dbpath `"$mongoData`" --port 27017" -NoNewWindow
+        $mongodOk = Wait-PortListening -Port 27017 -TimeoutSeconds 15
+    }
+    if (-not $mongodOk -and (Get-Command docker -ErrorAction SilentlyContinue)) {
+        Start-Process -FilePath 'docker' -ArgumentList 'start mongodb 2>nul || docker run -d -p 27017:27017 --name mongodb mongo:7.0' -NoNewWindow -Wait
+        $mongodOk = Wait-PortListening -Port 27017 -TimeoutSeconds 30
+    }
+    if (-not $mongodOk) {
+        Record-Error 'MongoDB failed to start'
+        Write-Host '[WARN] MongoDB may not be available. Manual: docker run -d -p 27017:27017 --name mongodb mongo:7' -ForegroundColor Yellow
+    }
+}
+
+# Redis
+$redisOk = Start-ServiceWithRetry -ServiceName 'Memurai' -MaxRetries 2 -PortCheck 6379 -PortTimeout 30
+if (-not $redisOk) {
+    $redisOk = Start-ServiceWithRetry -ServiceName 'Redis' -MaxRetries 2 -PortCheck 6379 -PortTimeout 30
+}
+if (-not $redisOk) {
+    Write-Log 'WARN' 'Redis/Memurai service unavailable. Attempting direct fallback...'
+    $redisFallbackOk = $false
+    if (Get-Command redis-server -ErrorAction SilentlyContinue) {
+        Start-Process -FilePath 'cmd.exe' -ArgumentList "/c start `"Redis`" /MIN redis-server --port 6379" -NoNewWindow
+        $redisFallbackOk = Wait-PortListening -Port 6379 -TimeoutSeconds 15
+    }
+    if (-not $redisFallbackOk -and (Get-Command docker -ErrorAction SilentlyContinue)) {
+        Start-Process -FilePath 'docker' -ArgumentList 'start redis 2>nul || docker run -d -p 6379:6379 --name redis redis:7' -NoNewWindow -Wait
+        $redisFallbackOk = Wait-PortListening -Port 6379 -TimeoutSeconds 30
+    }
+    if ($redisFallbackOk) {
+        Write-Log 'OK' 'Redis ready via fallback'
+        $redisOk = $true
+    } else {
+        Record-Error 'Redis failed to start'
+        Write-Host '[WARN] Redis may not be available. Manual: docker run -d -p 6379:6379 --name redis redis:7' -ForegroundColor Yellow
+    }
+}
+if ($redisOk) {
+    Write-Log 'OK' 'Redis/Memurai ready'
+} else {
+    Record-Error 'Redis failed to start'
+    Write-Host '[WARN] Redis may not be available' -ForegroundColor Yellow
+}
+
+# ============================================================
+# PHASE 3: 清理旧进程
+# ============================================================
+Write-Step 'PHASE 3' 'Cleaning Old Processes'
+Clear-Port -Port $BackendPort -ForceKillAll
+Clear-Port -Port $FrontendPort -ForceKillAll
+Write-Log 'OK' 'Ports cleared'
+
+# ============================================================
+# PHASE 4: 启动后端
+# ============================================================
+Write-Step 'PHASE 4' 'Starting Backend'
+# 🐛 [RCA v22] 日志: 确认 venv 路径类型（目录 vs 文件）
+if ($activateScript) {
+    $pathType = if (Test-Path $activateScript -PathType Container) { 'DIR' } else { 'FILE' }
+    Write-Log 'DIAG' "VenvPath = $activateScript (type=$pathType)"
+    $resolved = Join-Path $activateScript 'Scripts\activate.bat'
+    $exists = Test-Path $resolved
+    Write-Log 'DIAG' "Resolved activate = $resolved (exists=$exists)"
+}
+$backendPid = Start-Backend -ProjectDir $ProjectDir -Port $BackendPort -VenvPath $activateScript
+if ($backendPid) {
+    Write-Log 'OK' "Backend started (PID=$backendPid)"
+} else {
+    Record-Error 'Backend failed to start'
+}
+
+# 等待后端就绪
+$backendReady = Wait-PortListening -Port $BackendPort -TimeoutSeconds 60
+if ($backendReady) {
+    Write-Log 'OK' 'Backend is ready'
+    # 健康检查
+    $healthOk = Test-Health -Uri "http://localhost:$BackendPort/api/health" -TimeoutSeconds 10
+    if (-not $healthOk) {
+        Write-Log 'WARN' 'Backend health check failed (may need more time)'
+    }
+} else {
+    Record-Error 'Backend did not become ready'
+    Write-Host "[WARN] Backend may not be ready. Check log for details." -ForegroundColor Yellow
+}
+
+# ============================================================
+# PHASE 5: 启动前端
+# ============================================================
+Write-Step 'PHASE 5' 'Starting Frontend'
+$frontendPid = Start-Frontend -ProjectDir $ProjectDir -Port $FrontendPort -Mode $FrontendMode -TimeoutSeconds 60
+if ($frontendPid) {
+    Write-Log 'OK' "Frontend started (PID=$frontendPid)"
+} else {
+    Record-Error 'Frontend failed to start'
+}
+
+# 等待前端就绪
+$frontendReady = Wait-PortListening -Port $FrontendPort -TimeoutSeconds 30
+if ($frontendReady) {
+    Write-Log 'OK' 'Frontend is ready'
+} else {
+    Write-Log 'WARN' 'Frontend may take longer to compile'
+}
+
+# ============================================================
+# 启动完成
+# ============================================================
+Write-Host ''
+Write-Host '============================================================' -ForegroundColor Cyan
+Write-Host '  TradingAgents-CN v1.0.1 Launcher' -ForegroundColor Cyan
+Write-Host '  Frontend: http://localhost:'$FrontendPort -ForegroundColor Cyan
+Write-Host '  Backend:  http://localhost:'$BackendPort'/docs' -ForegroundColor Cyan
+Write-Host '  Health:   http://localhost:'$BackendPort'/api/health' -ForegroundColor Cyan
+Write-Host '============================================================' -ForegroundColor Cyan
+Write-Host ''
+
+if ($global:ErrorCount -eq 0) {
+    Write-Log 'OK' 'All systems operational. Zero errors.'
+    Write-Host 'All systems operational. Zero errors detected.' -ForegroundColor Green
+} else {
+    Write-Log 'INFO' "Startup completed with $global:ErrorCount error(s)"
+    Write-Host "[WARN] $global:ErrorCount error(s) occurred during startup." -ForegroundColor Yellow
+}
+
+Write-Host ''
+# 自动打开浏览器（延迟3秒确保前端已启动）
+Write-Host '正在打开浏览器...' -ForegroundColor Cyan
+Start-Sleep -Seconds 3
+Start-Process "http://localhost:$FrontendPort"
+
+Write-Host '程序在后台运行中。关闭此窗口不影响程序。' -ForegroundColor Gray
+
+exit 0

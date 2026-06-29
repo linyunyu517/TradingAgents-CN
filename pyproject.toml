@@ -1,0 +1,274 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tradingagents"
+# BUG-154: 与 VERSION 文件 v1.0.1 保持一致
+version = "1.0.1"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # 后端API框架和服务器
+    "fastapi>=0.104.0,<1.0.0",
+    "uvicorn[standard]>=0.24.0,<1.0.0",
+    "pydantic>=2.0.0,<3.0.0",
+    "pydantic-settings>=2.0.0,<3.0.0",
+    "python-multipart>=0.0.6,<1.0.0",
+
+    # 数据库和缓存
+    "motor>=3.3.0,<4.0.0",
+    "pymongo>=4.0.0,<5.0.0",
+    "redis>=6.2.0,<7.0.0",
+
+    # 认证和安全
+    "PyJWT>=2.0.0,<3.0.0",
+    "bcrypt>=4.0.0,<5.0.0",
+
+    # 任务调度和异步
+    "apscheduler>=3.10.0,<4.0.0",
+    # BUG-025: aiofiles — 可能未使用，当前代码中未找到直接 import（保留用于异步文件 IO 场景）
+    "aiofiles>=0.8.0,<25.0.0",
+
+    # HTTP客户端和SSE
+    "httpx>=0.24.0,<1.0.0",
+    "sse-starlette>=1.0.0,<4.0.0",
+
+    # 日志处理
+    "concurrent-log-handler>=0.9.24,<1.0.0",  # Windows 友好的日志轮转处理器
+
+    # 数据源和金融数据
+    # BUG-025: eodhd — 可能未使用，当前代码中未找到直接 import（保留用于潜在数据源扩展）
+    "eodhd>=1.0.32,<2.0.0",
+    "tushare>=1.4.21,<2.0.0",
+    "stockstats>=0.6.5,<1.0.0",
+
+    # AI和LLM
+    # BUG-025: chainlit — 可能未使用，当前代码中未找到直接 import（保留用于潜在交互式界面）
+    "chainlit>=2.5.5,<3.0.0",
+    "chromadb>=1.0.12,<2.0.0",
+    "dashscope>=1.20.0,<2.0.0",
+    "langchain-anthropic>=0.3.15,<1.0.0",
+    "langchain-core>=0.3.0,<1.0.0",
+    "langchain-experimental>=0.3.4,<1.0.0",
+    "langchain-google-genai>=2.1.12,<3.0.0",  # 修复 client_options 未定义错误
+    "langchain-openai>=0.3.23,<1.0.0",
+    "langgraph>=0.7.0,<1.0.0",
+    "openai>=1.0.0,<2.0.0",
+
+    # 数据处理和分析
+    "pandas>=2.3.0,<3.0.0",
+    "plotly>=5.0.0,<7.0.0",
+
+    # 网络爬虫和解析
+    "curl-cffi>=0.6.0,<1.0.0",  # 模拟真实浏览器TLS指纹，绕过反爬虫检测
+    "feedparser>=6.0.11,<7.0.0",
+    # BUG-025: parsel — 可能未使用，当前代码中未找到直接 import（保留用于潜在 web 解析需求）
+    "parsel>=1.10.0,<2.0.0",
+    "praw>=7.8.1,<8.0.0",
+    "requests>=2.32.4,<3.0.0",
+
+    # 文档和格式化
+    "markdown>=3.4.0,<4.0.0",
+    "pypandoc>=1.11,<2.0.0",
+    "python-docx>=0.8.11,<1.0.0",  # Word文档处理，用于修复文本方向
+    "pdfkit>=1.0.0,<2.0.0",  # PDF生成工具，需要wkhtmltopdf
+
+    # 工具和辅助
+    "psutil>=6.1.0,<8.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "pytz>=2025.2,<2026.0",
+    "questionary>=2.1.0,<3.0.0",
+    "rich>=14.0.0,<15.0.0",
+    "setuptools>=80.9.0,<81.0.0",
+    "streamlit>=1.28.0,<2.0.0",
+    "toml>=0.10.2,<1.0.0",
+    "tqdm>=4.67.1,<5.0.0",
+    # [2026-06-27 修复] 跨平台文件锁，替代 Unix-only 的 fcntl
+    # 已在 requirements-lock.txt 中（间接依赖），此处显式声明
+    "portalocker>=3.0.0,<4.0.0",
+    "typing-extensions>=4.14.0,<5.0.0",
+
+    # 🔧 [P0-C3 Bug Fix] gymnasium — L-IWM / RL 模块的传递依赖
+    # 从传递依赖中显式声明，避免 ModuleNotFoundError: No module named 'gymnasium'
+    "gymnasium>=0.29.0,<1.0.0",
+
+    # [R2 Fix M2] omegaconf — DreamerV3 初始化所需依赖，防止配置降级退化
+    "omegaconf>=2.3.0,<3.0.0",
+
+]
+
+[project.optional-dependencies]
+qianfan = ["qianfan>=0.4.20,<1.0.0"]
+
+[project.scripts]
+tradingagents = "main:main"
+
+[tool.setuptools.packages.find]
+include = ["tradingagents*"]
+exclude = ["tests*", "docs*", "scripts*", "data*", "logs*", "reports*", "results*", "eval_results*", "upstream_contribution*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+exclude = [".git", "__pycache__", "build", "dist", ".venv", "venv", "node_modules", ".dna", ".torch_cache", "data", "logs", "reports", "eval_results", "images", "docker"]
+unsafe-fixes = false
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "ARG", "PL", "RUF", "S"]
+ignore = [
+    "E501",
+    "D",
+    "ERA001",
+    "FIX",
+    "TD",
+    "FIX002",
+    "PLR2004",
+    "PLR0913",
+    "PLR0914",
+    "PLR0915",
+    "PLR0911",
+    "PLR0912",
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    "T20",
+    "S101",
+    "S311",
+    "INP001",
+    # 以下规则大量触发，且在当前代码架构中是设计选择（非错误）
+    "PLC0415",  # import-outside-top-level — 项目中广泛使用延迟导入
+    "E402",     # module-import-not-at-top-of-file — 同上，延迟导入需求
+    "ARG001",   # unused-function-argument — 回调/钩子函数参数约定
+    "ARG002",   # unused-method-argument — 回调/钩子方法参数约定
+    "ARG003",   # unused-class-method-argument — 类方法回调约定
+    "ARG004",   # unused-static-method-argument — 静态方法回调约定
+    "ARG005",   # unused-lambda-argument — lambda回调约定
+    "PLW0603",  # global-statement — 全局状态管理模式
+    "PLW0602",  # global-variable-not-assigned — 全局变量引用
+    "N806",     # non-lowercase-variable-in-function — pandas/numpy 约定
+    "N803",     # invalid-argument-name
+    "N802",     # invalid-function-name
+    "N801",     # invalid-class-name
+    "N805",     # invalid-first-argument-name-for-method
+    "N816",     # mixed-case-variable-in-global-scope
+    "N812",     # lowercase-imported-as-non-lowercase
+    "N814",     # camelcase-imported-as-constant
+    "N815",     # mixed-case-variable-in-class-scope
+    "N817",     # camelcase-imported-as-acronym
+    "N818",     # error-suffix-on-exception-name
+    "N999",     # invalid-module-name
+    "PLC2401",  # non-ascii-name
+    "SIM102",   # collapsible-if
+    "SIM105",   # suppressible-exception
+    "SIM108",   # if-else-block-instead-of-if-exp
+    "SIM110",   # reimplemented-builtin
+    "SIM113",   # enumerate-for-loop
+    "SIM114",   # if-with-same-arms
+    "SIM117",   # multiple-with-statements
+    "SIM118",   # in-dict-keys
+    "SIM202",   # negate-not-equal-op
+    "SIM401",   # if-else-block-instead-of-dict-get
+    "SIM103",   # needless-bool
+    "RUF005",   # collection-literal-concatenation
+    "RUF006",   # asyncio-dangling-task
+    "RUF012",   # mutable-class-default
+    "RUF013",   # implicit-optional
+    "RUF015",   # unnecessary-iterable-allocation-for-first-element
+    "RUF019",   # unnecessary-key-check
+    "RUF021",   # parenthesize-chained-operators
+    "RUF022",   # unsorted-dunder-all
+    "RUF034",   # useless-if-else
+    "RUF059",   # unused-unpacked-variable
+    "PLC0206",  # dict-index-missing-items
+    "PLC0207",  # missing-maxsplit-arg
+    "PLR1704",  # redefined-argument-from-local
+    "PLR1711",  # useless-return
+    "PLR1714",  # repeated-equality-comparison
+    "PLR1722",  # sys-exit-alias
+    "PLR5501",  # collapsible-else-if
+    "PLW0108",  # unnecessary-lambda
+    "PLW1508",  # invalid-envvar-default
+    "PLW1510",  # subprocess-run-without-check
+    "PLW2901",  # redefined-loop-name
+    "B007",     # unused-loop-control-variable
+    "B017",     # assert-raises-exception
+    "B023",     # function-uses-loop-variable
+    "B028",     # no-explicit-stacklevel
+    "B033",     # duplicate-value
+    "B905",     # zip-without-explicit-strict
+    "S105",     # hardcoded-password-string
+    "S110",     # try-except-pass
+    "S112",     # try-except-continue
+    "S113",     # request-without-timeout
+    "S301",     # suspicious-pickle-usage
+    "S310",     # suspicious-url-open-usage
+    "S324",     # hashlib-insecure-hash-function
+    "S602",     # subprocess-popen-with-shell-equals-true
+    "S603",     # subprocess-without-shell-equals-true
+    "S607",     # start-process-with-partial-path
+    "S104",     # hardcoded-bind-all-interfaces
+    "E701",     # multiple-statements-on-one-line-colon
+    "E712",     # true-false-comparison
+    "E741",     # ambiguous-variable-name
+    "UP031",    # printf-string-formatting
+    "UP035",    # deprecated-import
+    "UP036",    # outdated-version-block
+    "UP045",    # non-pep604-annotation-optional
+    "F402",     # import-shadowed-by-loop-var
+    "F601",     # multi-value-repeated-key-literal
+    "F811",     # redefined-while-unused
+    "F823",     # undefined-local
+    "PLE1205",  # logging-too-many-args
+    "PLE2510",  # invalid-character-backspace
+    "PLE2512",  # invalid-character-sub
+    # 以下规则涉及代码逻辑变更，在当前项目架构下选择不修改
+    "B904",     # raise-without-from-inside-except — 283处，添加 from e 可能改变异常链行为
+    "B008",     # function-call-in-default-argument — 223处，项目广泛使用此模式
+    "F401",     # unused-import — 81处，部分用于类型检查时延迟加载
+    # 以下规则为代码风格问题或惯用写法，在当前架构下选择不修改
+    "W293",     # blank-line-with-whitespace — 8处
+    "F841",     # unused-variable — 8处，保留用于后续扩展
+    "PLR0124",  # comparison-with-itself — 7处，惯用 NaN 检查 (value != value)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "D", "ANN", "PLR2004"]
+"__init__.py" = ["F401"]
+"examples/*" = ["S", "D"]
+"scripts/*" = ["T20", "S", "D"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.10"
+explicit_package_bases = true
+ignore_missing_imports = true
+warn_return_any = false
+warn_unused_ignores = false
+warn_redundant_casts = true
+check_untyped_defs = false
+disallow_untyped_defs = false
+no_implicit_optional = false
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pandas", "numpy", "matplotlib.*", "seaborn",
+    "sklearn.*", "tensorflow.*", "torch.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "scripts.*",
+]
+ignore_errors = true

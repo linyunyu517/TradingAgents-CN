@@ -1,0 +1,47 @@
+@echo off
+chcp 65001 >nul
+echo ============================================
+echo  TradingAgents 修复部署脚本
+echo  自动执行：清 pycache → 装依赖 → 重启后端
+echo ============================================
+
+cd /d "%~dp0"
+
+rem 步骤 1: 清除所有 __pycache__
+echo.
+echo [1/4] 清除 __pycache__ 字节码缓存...
+for /r . %%i in (__pycache__) do if exist "%%i" rmdir /s /q "%%i" 2>nul
+echo      DONE
+
+rem 步骤 2: 安装/更新依赖
+echo.
+echo [2/4] 安装项目依赖...
+call .venv\Scripts\pip install -e . 2>nul
+if errorlevel 1 (
+    echo      警告：pip install 失败，尝试基础安装...
+    call .venv\Scripts\pip install "efinance>=0.5.8,<1.0.0" "akshare>=1.14.0,<2.0.0" "baostock>=0.8.0,<0.10.0"
+)
+echo      DONE
+
+rem 步骤 3: 检查关键依赖
+echo.
+echo [3/4] 检查关键依赖...
+.venv\Scripts\python -c "import efinance; print(f'efinance: OK (v{efinance.__version__})')" 2>nul || echo      警告：efinance 未安装
+.venv\Scripts\python -c "import akshare; print(f'akshare: OK (v{akshare.__version__})')" 2>nul || echo      警告：akshare 未安装
+.venv\Scripts\python -c "import baostock; print(f'baostock: OK (v{baostock.__version__})')" 2>nul || echo      警告：baostock 未安装
+echo      DONE
+
+rem 步骤 4: 重启后端服务
+echo.
+echo [4/4] 重启后端服务...
+for /f "tokens=2" %%i in ('tasklist /fi "imagename eq python.exe" /nh 2^>nul ^| findstr /i "python"') do (
+    taskkill /f /pid %%i 2>nul
+)
+timeout /t 2 /nobreak >nul
+start "TradingAgents-Backend" .venv\Scripts\uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+echo      后端已重启（监听 8000 端口）
+echo.
+
+echo ============================================
+echo  部署完成！请运行 python run_analysis.py
+echo ============================================

@@ -1,0 +1,231 @@
+version: '3.8'
+
+# =============================================================================
+# TradingAgents-CN Docker Compose — 基础开发部署配置
+# =============================================================================
+#
+# 用途：开发环境和基础部署，前端通过 3000 端口访问，后端 API 通过 8000 端口
+# 特点：包含 MongoDB Express 和 Redis Commander 管理界面（需启用 management profile）
+#
+# 对比其他 docker-compose 变体：
+#   docker-compose.hub.nginx.yml         — 带 Nginx 反向代理的生产部署（使用 Docker Hub 镜像）
+#   docker-compose.hub.nginx.arm.yml     — ARM64 版本的带 Nginx 反向代理部署
+#   docs/deployment/docker/docker-compose.split.yml — 前后端分离的旧版兼容配置
+#
+# 使用方式：
+#   docker-compose up -d                                          # 启动所有服务
+#   docker-compose --profile management up -d                     # 包含管理界面
+#   docker-compose -f docker-compose.hub.nginx.yml up -d          # 生产部署
+#
+# 环境变量：从 .env 文件读取，需先运行 scripts/generate_credentials.py 生成凭据
+# =============================================================================
+
+services:
+  # FastAPI 后端服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    # BUG-154: 与 VERSION 文件 v1.0.1 保持一致
+    image: tradingagents-backend:v1.0.1
+    container_name: tradingagents-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # 日志目录映射
+      - ./logs:/app/logs
+      # 配置目录映射
+      - ./config:/app/config
+      # 数据目录映射
+      - ./data:/app/data
+      # 🔧 [P0-C2 Bug Fix] Qlib 数据卷挂载（按需启用，防止回测功能因数据缺失崩溃）
+      - ./qlib_data:/app/qlib_data
+    env_file:
+      - .env
+    environment:
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      TZ: "Asia/Shanghai"
+      # 日志配置
+      TRADINGAGENTS_LOG_LEVEL: "INFO"
+      TRADINGAGENTS_LOG_DIR: "/app/logs"
+      TRADINGAGENTS_LOG_FILE: "/app/logs/tradingagents.log"
+      # Docker专用数据库配置（从 .env 读取凭据）
+      # BUG-136: 使用 MONGODB_DATABASE 环境变量统一数据库名
+      TRADINGAGENTS_MONGODB_URL: mongodb://admin:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGODB_DATABASE:-tradingagentscn}?authSource=admin
+      TRADINGAGENTS_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      TRADINGAGENTS_CACHE_TYPE: redis
+      # Docker环境标识
+      DOCKER_CONTAINER: "true"
+      # API配置
+      API_HOST: "0.0.0.0"
+      API_PORT: "8000"
+      # CORS配置
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:8080,http://localhost:5173"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        # BUG-137: 增加日志文件保留数量，便于故障排查
+        max-file: "5"
+
+  # Vue 3 前端服务
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    # BUG-154: 与 VERSION 文件 v1.0.1 保持一致
+    image: tradingagents-frontend:v1.0.1
+    container_name: tradingagents-frontend
+    ports:
+      - "3000:80"
+    environment:
+      TZ: "Asia/Shanghai"
+      # 后端API地址
+      VITE_API_BASE_URL: "http://localhost:8000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # MongoDB 数据库服务
+  mongodb:
+    image: mongo:7.0
+    container_name: tradingagents-mongodb
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: tradingagents
+      TZ: "Asia/Shanghai"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: mongosh --quiet localhost:27017/test --eval 'db.runCommand({"ping":1}).ok' 2>/dev/null || echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: tradingagents-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    environment:
+      TZ: "Asia/Shanghai"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # Redis Commander 管理界面（可选）
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:0.8.0
+    container_name: tradingagents-redis-commander
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD}
+    networks:
+      - tradingagents-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    profiles:
+      - management
+
+  # Mongo Express 管理界面（可选）
+  mongo-express:
+    image: mongo-express:1.0.2-20
+    container_name: tradingagents-mongo-express
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://admin:${MONGO_ROOT_PASSWORD}@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    networks:
+      - tradingagents-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    profiles:
+      - management
+
+# 数据卷定义
+volumes:
+  mongodb_data:
+    driver: local
+    name: tradingagents_mongodb_data
+  redis_data:
+    driver: local
+    name: tradingagents_redis_data
+
+# 网络定义
+networks:
+  tradingagents-network:
+    driver: bridge
+    name: tradingagents-network
+

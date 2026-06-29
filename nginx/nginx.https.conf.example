@@ -1,0 +1,185 @@
+# =============================================================================
+# TradingAgents-CN Nginx HTTPS 配置示例
+# =============================================================================
+#
+# 使用方式：
+#   1. 将本文件复制为 nginx/nginx.conf（或替换挂载的配置）
+#   2. 准备 SSL 证书文件，放置在 ./certs/ 目录下：
+#      - ./certs/tradingagents.crt  （或 .pem）
+#      - ./certs/tradingagents.key
+#   3. 修改 docker-compose.hub.nginx.yml 中的 nginx 服务，添加：
+#      volumes:
+#        - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+#        - ./certs:/etc/nginx/certs:ro         # <-- 新增证书挂载
+#      ports:
+#        - "443:443"                            # <-- 新增 HTTPS 端口
+#   4. 重启: docker-compose -f docker-compose.hub.nginx.yml up -d
+#
+# 使用 Let's Encrypt 免费证书（推荐）：
+#   # 安装 certbot
+#   sudo apt install certbot
+#
+#   # 获取证书（需要 80 端口已暴露且域名指向本机）
+#   sudo certbot certonly --standalone -d your-domain.com
+#
+#   # 复制证书到项目目录
+#   sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem ./certs/
+#   sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem ./certs/
+#   sudo chmod 644 ./certs/fullchain.pem ./certs/privkey.pem
+#
+#   # 自动续期（crontab）
+#   0 3 * * * certbot renew --quiet && docker-compose -f /path/to/docker-compose.hub.nginx.yml restart nginx
+#
+# 自签名证书（仅开发/内部使用）：
+#   openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+#     -keyout ./certs/tradingagents.key \
+#     -out ./certs/tradingagents.crt \
+#     -subj "/CN=localhost"
+# =============================================================================
+
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log notice;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    tcp_nopush      on;
+    tcp_nodelay     on;
+    keepalive_timeout  65;
+    types_hash_max_size 2048;
+    client_max_body_size 100M;
+
+    gzip  on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript;
+
+    # =============================================================================
+    # SSL 全局配置
+    # =============================================================================
+    ssl_protocols TLSv1.2 TLSv1.3;          # 仅启用安全的 TLS 版本
+    ssl_ciphers HIGH:!aNULL:!MD5;            # 使用强加密套件
+    ssl_prefer_server_ciphers on;            # 优先使用服务端加密套件
+    ssl_session_cache shared:SSL:10m;        # SSL 会话缓存
+    ssl_session_timeout 10m;                 # SSL 会话超时
+    ssl_session_tickets off;                 # 禁用 SSL 会话票据（提高安全性）
+
+    # HSTS（HTTP Strict Transport Security）— 告知浏览器始终使用 HTTPS
+    # 注意：启用后所有 HTTP 访问将被浏览器自动重定向到 HTTPS
+    # 首次启用建议使用 max-age=300 测试，确认无误后改为 max-age=31536000
+    #add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # 上游后端服务
+    upstream backend {
+        server backend:8000;
+    }
+
+    # =============================================================================
+    # HTTPS Server（生产环境主入口）
+    # =============================================================================
+    server {
+        listen 443 ssl http2;                # HTTPS + HTTP/2
+        server_name your-domain.com;         # ← 替换为你的域名或 IP
+
+        # SSL 证书路径（需在 docker-compose 中挂载 ./certs:/etc/nginx/certs）
+        ssl_certificate     /etc/nginx/certs/tradingagents.crt;
+        ssl_certificate_key /etc/nginx/certs/tradingagents.key;
+
+        # 安全响应头
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+        # 前端静态文件
+        location / {
+            proxy_pass http://frontend:80;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # 后端 API 代理
+        location /api/ {
+            proxy_pass http://backend/api/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # WebSocket 支持
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+
+            # 禁用缓存
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_no_cache 1;
+            proxy_cache_bypass 1;
+            add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+            add_header Pragma "no-cache";
+            add_header Expires "0";
+
+            # 超时设置
+            proxy_connect_timeout 120s;
+            proxy_send_timeout 3600s;
+            proxy_read_timeout 3600s;
+
+            # 缓冲区设置
+            proxy_buffer_size 128k;
+            proxy_buffers 4 256k;
+            proxy_busy_buffers_size 256k;
+        }
+
+        # 健康检查
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+
+        # 错误页面
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }
+
+    # =============================================================================
+    # HTTP → HTTPS 自动重定向（可选）
+    # =============================================================================
+    # 取消注释以下 server 块以启用 HTTP 到 HTTPS 的自动跳转
+    #server {
+    #    listen 80;
+    #    server_name your-domain.com;
+    #
+    #    # 将所有 HTTP 请求重定向到 HTTPS
+    #    location / {
+    #        return 301 https://$host$request_uri;
+    #    }
+    #
+    #    # 健康检查端点保留 HTTP 访问
+    #    location /health {
+    #        access_log off;
+    #        return 200 "healthy\n";
+    #        add_header Content-Type text/plain;
+    #    }
+    #}
+}

@@ -1,0 +1,15 @@
+{
+  "phase": "8-llm-provider-mutation",
+  "kill_rate": 80.0,
+  "killed": 4,
+  "survived": 1,
+  "total": 5,
+  "results": {
+    "M1_remove_env_override": "KILLED",
+    "M2_fallback_openai": "SURVIVED",
+    "M3_remove_llm_provider_key": "KILLED",
+    "M4_config_overrides_env": "KILLED",
+    "M5_hardcoded_dashscope": "KILLED"
+  },
+  "pass": true
+}

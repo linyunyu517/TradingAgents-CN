@@ -1,0 +1,42 @@
+{
+  "phase": "8",
+  "name": "manual targeted mutation testing",
+  "timestamp": "2026-06-19 19:52:40",
+  "target": "stock_validator._get_data_source_priority_for_sync",
+  "mutations_count": 5,
+  "killed": 4,
+  "survived": 1,
+  "kill_rate_pct": 80.0,
+  "details": [
+    {
+      "mutation": "M1_remove_efinance",
+      "description": "移除 'efinance'",
+      "killed": true,
+      "message": "捕获: efinance 缺失"
+    },
+    {
+      "mutation": "M2_efinance_last",
+      "description": "'efinance' 移到最后",
+      "killed": true,
+      "message": "捕获: efinance @ 3"
+    },
+    {
+      "mutation": "M3_remove_baostock",
+      "description": "移除 'baostock'",
+      "killed": false,
+      "message": "通过: efinance @ idx=1, list=['tushare', 'efinance', 'akshare']"
+    },
+    {
+      "mutation": "M4_reverse_order",
+      "description": "反转优先级顺序",
+      "killed": true,
+      "message": "捕获: efinance @ 2"
+    },
+    {
+      "mutation": "M5_empty_list",
+      "description": "返回空列表",
+      "killed": true,
+      "message": "捕获: efinance 缺失"
+    }
+  ]
+}

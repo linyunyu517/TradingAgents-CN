@@ -1,0 +1,224 @@
+version: '3.8'
+
+# =============================================================================
+# TradingAgents-CN Docker Compose — Nginx 反向代理生产部署（x86_64/AMD64）
+# =============================================================================
+#
+# 用途：生产环境部署，前端和后端通过 Nginx 统一在 80 端口访问，无跨域问题
+# 特点：使用 Docker Hub 预构建镜像，支持 HTTPS 配置，统一入口
+#
+# 对比其他 docker-compose 变体：
+#   docker-compose.yml                          — 基础开发部署（无 Nginx）
+#   docker-compose.hub.nginx.arm.yml            — ARM64 版本的带 Nginx 部署
+#   docs/deployment/docker/docker-compose.split.yml — 前后端分离旧版兼容配置
+#
+# 使用方式：
+#   首次部署: docker-compose -f docker-compose.hub.nginx.yml up -d
+#   配置 HTTPS: 参考 nginx/nginx.https.conf.example
+#   更新服务: docker-compose -f docker-compose.hub.nginx.yml pull && up -d
+#
+# 环境变量：从 .env 文件读取，需先运行 scripts/generate_credentials.py 生成凭据
+# =============================================================================
+
+services:
+  # MongoDB数据库
+  mongodb:
+    image: mongo:7.0
+    container_name: tradingagents-mongodb
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - tradingagents_hub_mongodb_data:/data/db
+      # 注意：不挂载初始化脚本，使用 MongoDB 自动创建的 root 用户
+      # 应用会在首次运行时自动创建所需的集合和索引
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      # ========== BUG-020 修复: 与后端 MONGODB_DATABASE 保持一致 ==========
+      MONGO_INITDB_DATABASE: "${MONGODB_DATABASE:-tradingagentscn}"
+      TZ: "Asia/Shanghai"
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: mongosh --quiet localhost:27017/test --eval 'db.runCommand({"ping":1}).ok' 2>/dev/null || echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: tradingagents-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - tradingagents_hub_redis_data:/data
+    environment:
+      TZ: "Asia/Shanghai"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # FastAPI后端服务
+  backend:
+    # 支持本地构建或从Docker Hub拉取
+    # 本地构建: docker-compose -f docker-compose.hub.nginx.yml build backend
+    # 拉取镜像: docker-compose -f docker-compose.hub.nginx.yml pull backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: hsliup/tradingagents-backend:v1.0.1
+    container_name: tradingagents-backend
+    restart: unless-stopped
+    expose:
+      - "8000"
+    volumes:
+      - ./logs:/app/logs
+      # 不映射config目录，使用镜像内的配置文件
+      # 如需修改配置，请修改代码后重新构建镜像
+      # - ./config:/app/config
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      TZ: "Asia/Shanghai"
+      TRADINGAGENTS_LOG_LEVEL: "INFO"
+      TRADINGAGENTS_LOG_DIR: "/app/logs"
+      TRADINGAGENTS_LOG_FILE: "/app/logs/tradingagents.log"
+      # MongoDB配置（使用 root 用户）
+      MONGODB_HOST: "mongodb"
+      MONGODB_PORT: "27017"
+      MONGODB_USERNAME: "admin"
+      MONGODB_PASSWORD: "${MONGO_ROOT_PASSWORD}"
+      # ========== BUG-020 修复: 数据库名称通过环境变量配置，默认值保持向后兼容 ==========
+      MONGODB_DATABASE: "${MONGODB_DATABASE:-tradingagentscn}"
+      MONGODB_AUTH_SOURCE: "admin"
+      # 注意：authSource=admin 表示在 admin 数据库中验证用户
+      # BUG-142: 移除重复的 MONGODB_CONNECTION_STRING，保留 MONGODB_URL 作为唯一连接串
+      MONGODB_URL: "mongodb://admin:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGODB_DATABASE:-tradingagentscn}?authSource=admin"
+      # Redis配置
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      REDIS_URL: "redis://:${REDIS_PASSWORD}@redis:6379/0"
+      DOCKER_CONTAINER: "true"
+      # ========== BUG-019 修复: 安全配置使用环境变量（无默认硬编码值） ==========
+      # 请务必在 .env 文件中设置 JWT_SECRET 和 CSRF_SECRET
+      # 可使用 scripts/generate_credentials.py 生成安全凭据
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ALGORITHM: "HS256"
+      ACCESS_TOKEN_EXPIRE_MINUTES: "480"
+      REFRESH_TOKEN_EXPIRE_DAYS: "30"
+      CSRF_SECRET: "${CSRF_SECRET}"
+      BCRYPT_ROUNDS: "12"
+      # CORS配置（允许 Nginx 代理）
+      CORS_ORIGINS: "*"
+      # AI模型API密钥（从.env文件读取，environment部分需要显式声明才能覆盖镜像内的占位符）
+      DASHSCOPE_API_KEY: "${DASHSCOPE_API_KEY}"
+      DASHSCOPE_ENABLED: "${DASHSCOPE_ENABLED:-false}"
+      DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY}"
+      DEEPSEEK_ENABLED: "${DEEPSEEK_ENABLED:-false}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      OPENAI_ENABLED: "${OPENAI_ENABLED:-false}"
+      GOOGLE_API_KEY: "${GOOGLE_API_KEY}"
+      GOOGLE_ENABLED: "${GOOGLE_ENABLED:-false}"
+      BAIDU_API_KEY: "${BAIDU_API_KEY}"
+      BAIDU_SECRET_KEY: "${BAIDU_SECRET_KEY}"
+      BAIDU_ENABLED: "${BAIDU_ENABLED:-false}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY}"
+      OPENROUTER_ENABLED: "${OPENROUTER_ENABLED:-false}"
+      AIHUBMIX_API_KEY: "${AIHUBMIX_API_KEY}"
+      AIHUBMIX_ENABLED: "${AIHUBMIX_ENABLED:-false}"
+      # BUG-141: 补充缺失的 AI 提供商环境变量
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+      ANTHROPIC_ENABLED: "${ANTHROPIC_ENABLED:-false}"
+      SILICONFLOW_API_KEY: "${SILICONFLOW_API_KEY}"
+      SILICONFLOW_ENABLED: "${SILICONFLOW_ENABLED:-false}"
+      # 数据源API密钥
+      TUSHARE_TOKEN: "${TUSHARE_TOKEN}"
+      TUSHARE_ENABLED: "${TUSHARE_ENABLED:-false}"
+      AKSHARE_ENABLED: "${AKSHARE_ENABLED:-true}"
+      BAOSTOCK_ENABLED: "${BAOSTOCK_ENABLED:-true}"
+      FINNHUB_API_KEY: "${FINNHUB_API_KEY}"
+      FINNHUB_ENABLED: "${FINNHUB_ENABLED:-false}"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Vue 3前端服务
+  frontend:
+    # 支持本地构建或从Docker Hub拉取
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: hsliup/tradingagents-frontend:v1.0.1
+    container_name: tradingagents-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    environment:
+      TZ: "Asia/Shanghai"
+      # 前端通过 Nginx 代理访问后端，使用相对路径
+      VITE_API_BASE_URL: "/api"
+    depends_on:
+      - backend
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Nginx 反向代理
+  # ports可以改为8080:80,或者其它的端口映射，前面一个是外部的端口，后面一个是容器内的端口
+  nginx:
+    image: nginx:1.25-alpine3.18
+    container_name: tradingagents-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80" 
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - tradingagents-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  tradingagents_hub_mongodb_data:
+    driver: local
+  tradingagents_hub_redis_data:
+    driver: local
+
+networks:
+  tradingagents-network:
+    driver: bridge
+

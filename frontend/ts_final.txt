@@ -1,0 +1,176 @@
+src/views/Analysis/AnalysisHistory.vue(400,25): error TS6133: 'task' is declared but its value is never read.
+src/views/Analysis/BatchAnalysis.vue(355,21): error TS6133: 'error' is declared but its value is never read.
+src/views/Analysis/BatchAnalysis.vue(571,7): error TS6133: '_resetForm' is declared but its value is never read.
+src/views/Analysis/SingleAnalysis.vue(787,7): error TS6133: '_appStore' is declared but its value is never read.
+src/views/Analysis/SingleAnalysis.vue(1784,29): error TS6133: 'instance' is declared but its value is never read.
+src/views/Analysis/SingleAnalysis.vue(1958,9): error TS6133: '_statusSummary' is declared but its value is never read.
+src/views/Analysis/SingleAnalysis.vue(2163,7): error TS6133: '_isDeepAnalysisRole' is declared but its value is never read.
+src/views/Dashboard/index.vue(238,79): error TS2339: Property 'CNY' does not exist on type 'number | { CNY: number; HKD: number; USD: number; }'.
+  Property 'CNY' does not exist on type 'number'.
+src/views/Dashboard/index.vue(242,60): error TS2345: Argument of type 'number | { CNY: number; HKD: number; USD: number; }' is not assignable to parameter of type 'number'.
+  Type '{ CNY: number; HKD: number; USD: number; }' is not assignable to type 'number'.
+src/views/Dashboard/index.vue(246,89): error TS2339: Property 'CNY' does not exist on type 'number | { CNY: number; HKD: number; USD: number; }'.
+  Property 'CNY' does not exist on type 'number'.
+src/views/Dashboard/index.vue(251,67): error TS2339: Property 'HKD' does not exist on type 'number | { CNY: number; HKD: number; USD: number; }'.
+  Property 'HKD' does not exist on type 'number'.
+src/views/Dashboard/index.vue(255,80): error TS2339: Property 'HKD' does not exist on type 'number | { CNY: number; HKD: number; USD: number; }'.
+  Property 'HKD' does not exist on type 'number'.
+src/views/Dashboard/index.vue(263,91): error TS2339: Property 'HKD' does not exist on type 'number | { CNY: number; HKD: number; USD: number; }'.
+  Property 'HKD' does not exist on type 'number'.
+src/views/Dashboard/index.vue(268,67): error TS2339: Property 'USD' does not exist on type 'number | { CNY: number; HKD: number; USD: number; }'.
+  Property 'USD' does not exist on type 'number'.
+src/views/Dashboard/index.vue(272,78): error TS2339: Property 'USD' does not exist on type 'number | { CNY: number; HKD: number; USD: number; }'.
+  Property 'USD' does not exist on type 'number'.
+src/views/Dashboard/index.vue(280,89): error TS2339: Property 'USD' does not exist on type 'number | { CNY: number; HKD: number; USD: number; }'.
+  Property 'USD' does not exist on type 'number'.
+src/views/Dashboard/index.vue(335,7): error TS6133: '_systemStatus' is declared but its value is never read.
+src/views/Dashboard/index.vue(341,7): error TS6133: '_queueStats' is declared but its value is never read.
+src/views/Dashboard/index.vue(578,7): error TS6133: '_getPnlClass' is declared but its value is never read.
+src/views/Dashboard/index.vue(584,7): error TS6133: '_syncMarketNews' is declared but its value is never read.
+src/views/Favorites/index.vue(583,28): error TS6133: 'rule' is declared but its value is never read.
+src/views/Favorites/index.vue(1028,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/views/Favorites/index.vue(1125,7): error TS2322: Type '(string | undefined)[]' is not assignable to type 'string[]'.
+  Type 'string | undefined' is not assignable to type 'string'.
+    Type 'undefined' is not assignable to type 'string'.
+src/views/Queue/index.vue(341,26): error TS2339: Property 'data' does not exist on type 'AnalysisResult'.
+src/views/Queue/index.vue(341,45): error TS2339: Property 'data' does not exist on type 'AnalysisResult'.
+src/views/Queue/index.vue(343,27): error TS2339: Property 'data' does not exist on type 'AnalysisResult'.
+src/views/Queue/index.vue(346,30): error TS2339: Property 'data' does not exist on type 'AnalysisResult'.
+src/views/Reports/ReportDetail.vue(230,42): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/views/Reports/ReportDetail.vue(311,18): error TS2339: Property 'success' does not exist on type 'SystemConfig'.
+src/views/Reports/ReportDetail.vue(311,38): error TS2339: Property 'data' does not exist on type 'SystemConfig'.
+src/views/Reports/ReportDetail.vue(312,35): error TS2339: Property 'data' does not exist on type 'SystemConfig'.
+src/views/Reports/ReportDetail.vue(617,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '(val: number) => void' is not assignable to type '(val: number | undefined) => any'.
+      Types of parameters 'val' and 'val' are incompatible.
+        Type 'number | undefined' is not assignable to type 'number'.
+          Type 'undefined' is not assignable to type 'number'.
+src/views/Reports/ReportDetail.vue(633,15): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '(val: number) => void' is not assignable to type '(val: number | undefined) => any'.
+      Types of parameters 'val' and 'val' are incompatible.
+        Type 'number | undefined' is not assignable to type 'number'.
+          Type 'undefined' is not assignable to type 'number'.
+src/views/Reports/ReportDetail.vue(671,29): error TS6133: 'instance' is declared but its value is never read.
+src/views/Reports/ReportDetail.vue(690,17): error TS2365: Operator '>' cannot be applied to types 'number' and 'number | CurrencyAmount'.
+src/views/Reports/ReportDetail.vue(899,7): error TS6133: '_getRiskDescription' is declared but its value is never read.
+src/views/Reports/TokenStatistics.vue(195,31): error TS6133: '_row' is declared but its value is never read.
+src/views/Reports/TokenStatistics.vue(196,31): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Reports/TokenStatistics.vue(200,31): error TS6133: '_row' is declared but its value is never read.
+src/views/Reports/TokenStatistics.vue(201,53): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Reports/TokenStatistics.vue(210,31): error TS6133: '_row' is declared but its value is never read.
+src/views/Reports/TokenStatistics.vue(211,30): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Reports/TokenStatistics.vue(216,31): error TS6133: '_row' is declared but its value is never read.
+src/views/Reports/TokenStatistics.vue(217,57): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Reports/TokenStatistics.vue(450,22): error TS6133: 'row' is declared but its value is never read.
+src/views/Screening/index.vue(502,40): error TS2345: Argument of type '{ market: string; date: undefined; adj: string; conditions: { logic: string; children: any[]; }; order_by: { field: string; direction: string; }[]; limit: number; offset: number; }' is not assignable to parameter of type 'ScreeningRunReq'.
+  Types of property 'market' are incompatible.
+    Type 'string' is not assignable to type '"CN"'.
+src/views/Screening/index.vue(554,7): error TS6133: '_generateMockResults' is declared but its value is never read.
+src/views/Screening/index.vue(561,3): error TS2322: Type '{ market: string; code: string; name: string; industry: string; close: number; pct_chg: number; total_mv: number; pe: number; pb: number; }[]' is not assignable to type 'StockInfo[]'.
+  Property 'symbol' is missing in type '{ market: string; code: string; name: string; industry: string; close: number; pct_chg: number; total_mv: number; pe: number; pb: number; }' but required in type 'StockInfo'.
+src/views/Screening/index.vue(644,31): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/views/Screening/index.vue(646,45): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/views/Screening/index.vue(648,32): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/views/Screening/index.vue(653,11): error TS6133: 'marketType' is declared but its value is never read.
+src/views/Screening/index.vue(659,43): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/views/Screening/index.vue(666,17): error TS2304: Cannot find name 'market'.
+src/views/Screening/index.vue(668,42): error TS2345: Argument of type '{ symbol: string | undefined; stock_code: string | undefined; stock_name: string | undefined; market: any; }' is not assignable to parameter of type 'AddFavoriteReq'.
+  Types of property 'stock_name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/views/Screening/index.vue(670,29): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/views/Settings/components/DataSourceConfigDialog.vue(204,21): error TS6133: 'value' is declared but its value is never read.
+src/views/Settings/components/DataSourceConfigDialog.vue(443,19): error TS6133: 'rule' is declared but its value is never read.
+src/views/Settings/components/LLMConfigDialog.vue(592,9): error TS2322: Type '{ speed?: number | undefined; cost?: number | undefined; quality?: number | undefined; }' is not assignable to type '{ speed: number; cost: number; quality: number; } | { speed: number; cost: number; quality: number; }'.
+  Type '{ speed?: number | undefined; cost?: number | undefined; quality?: number | undefined; }' is not assignable to type '{ speed: number; cost: number; quality: number; }'.
+    Types of property 'speed' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+src/views/Settings/components/LLMConfigDialog.vue(638,11): error TS2322: Type '{ speed?: number | undefined; cost?: number | undefined; quality?: number | undefined; }' is not assignable to type '{ speed: number; cost: number; quality: number; } | { speed: number; cost: number; quality: number; }'.
+src/views/Settings/components/MarketCategoryDialog.vue(135,7): error TS2322: Type '{ id: string; name: string; display_name: string; description?: string | undefined; enabled: boolean; sort_order: number; created_at?: string | undefined; updated_at?: string | undefined; }' is not assignable to type '{ id: string; name: string; display_name: string; description: string; enabled: boolean; sort_order: number; } | { id: string; name: string; display_name: string; description: string; enabled: boolean; sort_order: number; }'.
+  Type '{ id: string; name: string; display_name: string; description?: string | undefined; enabled: boolean; sort_order: number; created_at?: string | undefined; updated_at?: string | undefined; }' is not assignable to type '{ id: string; name: string; display_name: string; description: string; enabled: boolean; sort_order: number; }'.
+    Types of property 'description' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/views/Settings/components/MarketCategoryDialog.vue(149,9): error TS2322: Type '{ id: string; name: string; display_name: string; description?: string | undefined; enabled: boolean; sort_order: number; created_at?: string | undefined; updated_at?: string | undefined; }' is not assignable to type '{ id: string; name: string; display_name: string; description: string; enabled: boolean; sort_order: number; } | { id: string; name: string; display_name: string; description: string; enabled: boolean; sort_order: number; }'.
+  Type '{ id: string; name: string; display_name: string; description?: string | undefined; enabled: boolean; sort_order: number; created_at?: string | undefined; updated_at?: string | undefined; }' is not assignable to type '{ id: string; name: string; display_name: string; description: string; enabled: boolean; sort_order: number; }'.
+    Types of property 'description' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/views/Settings/components/ModelCatalogManagement.vue(177,42): error TS6133: '$index' is declared but its value is never read.
+src/views/Settings/components/ModelCatalogManagement.vue(186,42): error TS6133: '$index' is declared but its value is never read.
+src/views/Settings/components/ModelCatalogManagement.vue(195,42): error TS6133: '$index' is declared but its value is never read.
+src/views/Settings/components/ModelCatalogManagement.vue(210,42): error TS6133: '$index' is declared but its value is never read.
+src/views/Settings/components/ModelCatalogManagement.vue(225,42): error TS6133: '$index' is declared but its value is never read.
+src/views/Settings/components/ModelCatalogManagement.vue(235,42): error TS6133: '$index' is declared but its value is never read.
+src/views/Settings/components/ModelCatalogManagement.vue(252,45): error TS2339: Property '$index' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Settings/components/SortableDataSourceList.vue(24,23): error TS6133: 'index' is declared but its value is never read.
+src/views/Settings/ConfigManagement.vue(218,29): error TS2322: Type 'string' is not assignable to type 'EpPropMergeType<StringConstructor, "primary" | "success" | "warning" | "info" | "danger", unknown> | undefined'.
+src/views/Settings/ConfigManagement.vue(300,35): error TS2322: Type 'string' is not assignable to type 'EpPropMergeType<StringConstructor, "primary" | "success" | "warning" | "info" | "danger", unknown> | undefined'.
+src/views/Settings/ConfigManagement.vue(1400,25): error TS18047: 'b' is possibly 'null'.
+src/views/Settings/ConfigManagement.vue(1400,38): error TS18047: 'a' is possibly 'null'.
+src/views/Settings/ConfigManagement.vue(1559,7): error TS6133: '_refreshLLMConfigs' is declared but its value is never read.
+src/views/Settings/ConfigManagement.vue(1627,5): error TS2353: Object literal may only specify known properties, and 'display_name' does not exist in type 'LLMConfig | { provider: string; model_name: string; model_display_name?: string | undefined; api_key?: string | undefined; api_base?: string | undefined; max_tokens: number; ... 18 more ...; updated_at?: string | undefined; }'.
+src/views/Settings/ConfigManagement.vue(1791,7): error TS6133: '_setDefaultLLM' is declared but its value is never read.
+src/views/Settings/ConfigManagement.vue(1926,7): error TS6133: '_setDefaultDataSource' is declared but its value is never read.
+src/views/Settings/index.vue(130,67): error TS2322: Type '(theme: string) => void' is not assignable to type '(val: string | number | boolean | undefined) => any'.
+  Types of parameters 'theme' and 'val' are incompatible.
+    Type 'string | number | boolean | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/views/Settings/index.vue(599,7): error TS2739: Type '{ language: "zh-CN" | "en-US"; }' is missing the following properties from type 'UserPreferences': default_market, default_depth, ui_theme, notifications_enabled, email_notifications
+src/views/Settings/index.vue(621,7): error TS2739: Type '{ ui_theme: "light" | "dark" | "auto"; sidebar_width: number; }' is missing the following properties from type 'UserPreferences': default_market, default_depth, language, notifications_enabled, email_notifications
+src/views/Settings/index.vue(648,7): error TS2739: Type '{ default_market: "A股" | "美股" | "港股"; default_depth: "1" | "2" | "3" | "4" | "5"; default_analysts: string[]; auto_refresh: boolean; refresh_interval: number; }' is missing the following properties from type 'UserPreferences': ui_theme, language, notifications_enabled, email_notifications
+src/views/Settings/index.vue(670,7): error TS2739: Type '{ desktop_notifications: boolean; analysis_complete_notification: boolean; system_maintenance_notification: boolean; notifications_enabled: boolean; }' is missing the following properties from type 'UserPreferences': default_market, default_depth, ui_theme, language, email_notifications
+src/views/Settings/index.vue(722,34): error TS6133: 'rule' is declared but its value is never read.
+src/views/Stocks/Detail.vue(226,27): error TS6133: 'content' is declared but its value is never read.
+src/views/Stocks/Detail.vue(231,38): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/views/Stocks/Detail.vue(233,39): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/views/Stocks/Detail.vue(334,36): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/views/Stocks/Detail.vue(436,7): error TS6133: '_notifStore' is declared but its value is never read.
+src/views/Stocks/Detail.vue(438,7): error TS6133: '_lastAnalysisTagType' is declared but its value is never read.
+src/views/Stocks/Detail.vue(985,10): error TS6133: 'scrollToDetail' is declared but its value is never read.
+src/views/Stocks/Detail.vue(1250,5): error TS2322: Type 'string | Promise<string>' is not assignable to type 'string'.
+  Type 'Promise<string>' is not assignable to type 'string'.
+src/views/System/DatabaseManagement.vue(41,80): error TS2339: Property 'Refresh' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/System/DatabaseManagement.vue(74,80): error TS2339: Property 'Refresh' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/System/SchedulerManagement.vue(276,44): error TS2322: Type '(tabName: string) => void' is not assignable to type '(name: TabPaneName) => any'.
+  Types of parameters 'tabName' and 'name' are incompatible.
+    Type 'TabPaneName' is not assignable to type 'string'.
+      Type 'number' is not assignable to type 'string'.
+src/views/System/SchedulerManagement.vue(980,7): error TS6133: '_formatAction' is declared but its value is never read.
+src/views/Tasks/TaskCenter.vue(92,31): error TS6133: '_row' is declared but its value is never read.
+src/views/Tasks/TaskCenter.vue(93,42): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(93,72): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(97,31): error TS6133: '_row' is declared but its value is never read.
+src/views/Tasks/TaskCenter.vue(98,39): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(98,67): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(98,102): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(102,31): error TS6133: '_row' is declared but its value is never read.
+src/views/Tasks/TaskCenter.vue(103,27): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(103,45): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(107,31): error TS6133: '_row' is declared but its value is never read.
+src/views/Tasks/TaskCenter.vue(108,30): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(108,100): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(109,30): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(109,100): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(110,30): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(110,102): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(111,30): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(111,96): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(112,30): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(112,59): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(112,85): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(112,155): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(113,68): error TS2339: Property 'row' does not exist on type '{ $: ComponentInternalInstance; $data: {}; $props: Partial<{}> & Omit<{} & VNodeProps & AllowedComponentProps & ComponentCustomProps, never>; ... 11 more ...; $watch<T extends string | ((...args: any) => any)>(source: T, cb: T extends (...args: any) => infer R ? (args_0: R, args_1: R, args_2: OnCleanup) => any : (ar...'.
+src/views/Tasks/TaskCenter.vue(158,7): error TS6133: '_renderMarkdown' is declared but its value is never read.
+src/views/Tasks/TaskCenter.vue(199,11): error TS6133: '_token' is declared but its value is never read.
+src/views/Tasks/TaskCenter.vue(366,20): error TS7030: Not all code paths return a value.
+src/views/Tasks/TaskCenter.vue(372,20): error TS6133: 'row' is declared but its value is never read.
