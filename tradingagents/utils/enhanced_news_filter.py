@@ -4,6 +4,7 @@
 """
 
 import logging
+import os
 
 import numpy as np
 import pandas as pd
@@ -54,8 +55,8 @@ class EnhancedNewsFilter(NewsRelevanceFilter):
             try:
                 from sentence_transformers import SentenceTransformer
 
-                # 使用轻量级中文模型
-                model_name = "paraphrase-multilingual-MiniLM-L12-v2"  # 支持中文的轻量级模型
+                # 使用 BGE-M3 多语言嵌入模型（1024维，高精度）
+                model_name = os.path.join(os.path.dirname(__file__), "..", "..", "models", "bge-m3")
                 self.sentence_model = SentenceTransformer(model_name)
 
                 # 预计算公司相关的embedding

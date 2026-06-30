@@ -5,6 +5,9 @@ logger = get_logger("default")
 # 🛡️ [H14 集中化防御] 导入安全 LLM 调用包装器和公共工具函数
 from tradingagents.agents.utils.agent_utils import safe_extract_content, safe_llm_invoke
 
+# 🧠 [渐进辩论摘要] 导入关键点提取工具
+from tradingagents.agents.utils.debate_utils import extract_debate_key_points, merge_key_points
+
 
 def create_bear_researcher(llm, memory):
     def bear_node(state) -> dict:
@@ -122,6 +125,11 @@ def create_bear_researcher(llm, memory):
             else "Bear Analyst: (内容为空)"
         )
 
+        # 🧠 [渐进辩论摘要] 从本轮发言中提取关键论点（纯规则，~1ms）
+        key_points = extract_debate_key_points(argument, "Bear")
+        existing_summary = investment_debate_state.get("debate_summary", "")
+        new_summary = merge_key_points(existing_summary, key_points)
+
         new_count = investment_debate_state["count"] + 1
         logger.info(f"🐻 [空头研究员] 发言完成，计数: {investment_debate_state['count']} -> {new_count}")
 
@@ -131,6 +139,7 @@ def create_bear_researcher(llm, memory):
             "bull_history": investment_debate_state.get("bull_history", ""),
             "current_response": argument,
             "count": new_count,
+            "debate_summary": new_summary,
         }
 
         return {"investment_debate_state": new_investment_debate_state}

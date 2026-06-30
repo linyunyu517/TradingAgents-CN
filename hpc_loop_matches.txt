@@ -1,0 +1,4 @@
+4976:2026-06-07 16:56:32,576 | hpc_loop             | INFO     | [HPC] 🚀 初始化 HPC-Loop 组件...
+4994:2026-06-07 16:56:32,589 | hpc_loop             | INFO     | [HPC] 🚀 HPC-Loop 初始化完成
+4995:2026-06-07 16:56:32,589 | agents               | INFO     | [HPC] HPC-Loop enabled
+5001:2026-06-07 16:56:32,593 | default              | INFO     | [HPC] add 12 HPC-Loop nodes

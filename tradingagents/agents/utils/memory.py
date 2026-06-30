@@ -447,9 +447,10 @@ class FinancialSituationMemory:
                     logger.info("🤖 加载本地嵌入模型（首次使用）")
                     import sentence_transformers as st_import
 
-                    # 使用轻量中文嵌入模型
+                    # 使用 BGE-M3 中文嵌入模型（1024维）
                     self.local_model = st_import.SentenceTransformer(
-                        "paraphrase-multilingual-MiniLM-L12-v2", device="cpu",
+                        os.path.join(os.path.dirname(__file__), "..", "..", "..", "models", "bge-m3"),
+                        device="cpu",
                     )
                     logger.info("✅ 本地嵌入模型加载完成")
                 # 计算嵌入向量

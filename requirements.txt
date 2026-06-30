@@ -1,0 +1,19 @@
+# ============================================================
+#  此文件已弃用 — 依赖管理已迁移至 pyproject.toml
+# ============================================================
+#
+#  ✅ 标准安装方式（推荐）：
+#     pip install -e .
+#
+#  ✅ 使用 uv（更快）：
+#     uv pip install -e .
+#
+#  ✅ 精确版本锁定文件（用于 CI/CD 和生产环境）：
+#     pip install -r requirements-lock.txt
+#     requirements-lock.txt 由 pip freeze 生成，确保环境完全可重现
+#
+#  📍 pyproject.toml 是项目依赖的唯一真实来源（source of truth）。
+#  所有新增/修改的依赖请直接编辑 pyproject.toml。
+#  更新 lockfile 请运行：pip freeze > requirements-lock.txt
+#
+# ============================================================

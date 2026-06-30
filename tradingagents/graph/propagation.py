@@ -105,7 +105,7 @@ class Propagator:
             "stock_code": effective_code,
             "market_type": market_type,
             "trade_date": str(trade_date),
-            "investment_debate_state": InvestDebateState({"history": "", "current_response": "", "count": 0}),
+            "investment_debate_state": InvestDebateState({"history": "", "current_response": "", "count": 0, "debate_summary": ""}),
             "risk_debate_state": RiskDebateState(
                 {
                     "history": "",

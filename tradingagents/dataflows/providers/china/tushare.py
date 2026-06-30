@@ -6,7 +6,7 @@ Tushare统一数据提供器
 Tushare Pro API:
   - 需要 Token 认证
   - 提供 A 股行情、财务、参考数据等
-  - token: <your_tushare_token>
+  - token: e08a65bc14dfbd34e6fe55e80d403a046ebeb59b55e81dbd3ed6c686
 """
 
 import errno
@@ -531,6 +531,58 @@ class TushareProvider(ChinaStockDataProvider):
             self.logger.error("❌ Tushare 获取股票基础信息失败: %s", e)
             return None
 
+    def get_stock_basic_info_sync(self, symbol: str | None = None) -> dict[str, Any] | list[dict[str, Any]] | None:
+        """获取股票基础信息（同步版本，避免 EventLoopPool 阻塞）"""
+        if not self.connected or not self.api:
+            return None
+
+        try:
+            if symbol:
+                ts_code = self._normalize_symbol(symbol)
+                df = self._api_call_with_retry(
+                    self.api.stock_basic, ts_code=ts_code,
+                    fields="ts_code,name,area,industry,market,list_date,exchange",
+                )
+                if df is not None and not df.empty:
+                    row = df.iloc[0]
+                    return {
+                        "code": symbol,
+                        "symbol": symbol,
+                        "ts_code": row.get("ts_code", ts_code),
+                        "name": row.get("name", ""),
+                        "area": row.get("area", ""),
+                        "industry": row.get("industry", ""),
+                        "market": row.get("market", ""),
+                        "exchange": row.get("exchange", ""),
+                        "list_date": str(row.get("list_date", "")) if row.get("list_date") else "",
+                    }
+                df = self._api_call_with_retry(self.api.stock_basic, ts_code=ts_code)
+                if df is not None and not df.empty:
+                    row = df.iloc[0]
+                    return {
+                        "code": symbol,
+                        "symbol": symbol,
+                        "ts_code": row.get("ts_code", ts_code),
+                        "name": row.get("name", ""),
+                        "area": row.get("area", ""),
+                        "industry": row.get("industry", ""),
+                        "market": row.get("market", ""),
+                        "exchange": row.get("exchange", ""),
+                        "list_date": str(row.get("list_date", "")) if row.get("list_date") else "",
+                    }
+                return None
+            else:
+                df = self._api_call_with_retry(
+                    self.api.stock_basic,
+                    fields="ts_code,name,area,industry,market,list_date,exchange",
+                )
+                if df is not None and not df.empty:
+                    return df.to_dict("records")
+                return None
+        except Exception as e:
+            self.logger.error("❌ Tushare 获取股票基础信息失败(sync): %s", e)
+            return None
+
     async def get_stock_quotes(self, symbol: str) -> dict[str, Any] | None:
         """获取实时行情"""
         if not self.connected or not self.api:
@@ -556,6 +608,33 @@ class TushareProvider(ChinaStockDataProvider):
             return None
         except Exception as e:
             self.logger.error("❌ Tushare 获取实时行情失败: %s", e)
+            return None
+
+    def get_stock_quotes_sync(self, symbol: str) -> dict[str, Any] | None:
+        """获取实时行情（同步版本）"""
+        if not self.connected or not self.api:
+            return None
+        try:
+            ts_code = self._normalize_symbol(symbol)
+            df = self._api_call_with_retry(self.api.rt_k, ts_code=ts_code)
+            if df is not None and not df.empty:
+                row = df.iloc[-1]
+                return {
+                    "code": symbol,
+                    "symbol": symbol,
+                    "ts_code": ts_code,
+                    "open": float(row.get("open", 0)) if row.get("open") is not None else None,
+                    "high": float(row.get("high", 0)) if row.get("high") is not None else None,
+                    "low": float(row.get("low", 0)) if row.get("low") is not None else None,
+                    "close": float(row.get("close", 0)) if row.get("close") is not None else None,
+                    "pre_close": float(row.get("pre_close", 0)) if row.get("pre_close") is not None else None,
+                    "volume": float(row.get("vol", 0)) if row.get("vol") is not None else None,
+                    "amount": float(row.get("amount", 0)) if row.get("amount") is not None else None,
+                    "trade_date": str(row.get("trade_date", "")),
+                }
+            return None
+        except Exception as e:
+            self.logger.error("❌ Tushare 获取实时行情失败(sync): %s", e)
             return None
 
     async def get_historical_data(
@@ -645,6 +724,59 @@ class TushareProvider(ChinaStockDataProvider):
             self.logger.error("❌ Tushare 获取历史数据失败: %s", e)
             return None
 
+    def get_historical_data_sync(
+        self,
+        symbol: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        period: str = "daily",
+    ) -> pd.DataFrame | None:
+        """获取历史数据（同步版本，避免 EventLoopPool 阻塞）"""
+        if not self.connected or not self.api:
+            return None
+
+        try:
+            ts_code = self._normalize_symbol(symbol)
+            start = start_date.replace("-", "") if start_date else None
+            end = end_date.replace("-", "") if end_date else None
+
+            from tushare.pro.data_pro import pro_bar
+
+            freq_map = {"daily": "D", "weekly": "W", "monthly": "M"}
+            freq = freq_map.get(period, "D")
+
+            df = self._api_call_with_retry(
+                pro_bar,
+                ts_code=ts_code, api=self.api, freq=freq,
+                start_date=start, end_date=end,
+                adj="qfq",
+                fields="trade_date,open,high,low,close,vol,amount,pct_chg",
+            )
+
+            if df is None or df.empty:
+                df = self._api_call_with_retry(
+                    pro_bar,
+                    ts_code=ts_code, api=self.api, freq=freq,
+                    start_date=start, end_date=end,
+                    fields="trade_date,open,high,low,close,vol,amount,pct_chg",
+                )
+
+            if df is not None and not df.empty:
+                df = df.rename(columns={"trade_date": "date", "vol": "volume", "pct_chg": "pct_change"})
+                if "date" in df.columns:
+                    df["date"] = pd.to_datetime(df["date"])
+                    df = df.sort_values("date")
+                df["code"] = symbol
+                self.logger.info("✅ [Tushare] 获取历史数据成功(sync): %s, %d条", symbol, len(df))
+                return df
+
+            self.logger.warning("⚠️ [Tushare] 获取历史数据为空(sync): %s", symbol)
+            return None
+
+        except Exception as e:
+            self.logger.error("❌ Tushare 获取历史数据失败(sync): %s", e)
+            return None
+
     def get_stock_list_sync(self) -> pd.DataFrame | None:
         """同步获取股票列表（供 TushareAdapter 调用）"""
         if not self.connected or not self.api:
@@ -720,38 +852,198 @@ class TushareProvider(ChinaStockDataProvider):
             self.logger.error("❌ Tushare 获取每日基础数据失败: %s", e)
             return None
 
+    def get_daily_basic_sync(self, trade_date: str) -> pd.DataFrame | None:
+        """获取每日基础数据（同步版本）"""
+        if not self.connected or not self.api:
+            return None
+        try:
+            fields = "ts_code,trade_date,total_mv,circ_mv,pe,pb,pe_ttm,pb_mrq,ps,ps_ttm,turnover_rate,volume_ratio,total_share,float_share"
+            df = self._api_call_with_retry(
+                self.api.daily_basic,
+                trade_date=trade_date.replace("-", ""),
+                fields=fields,
+            )
+            return df
+        except Exception as e:
+            self.logger.error("❌ Tushare 获取每日基础数据失败(sync): %s", e)
+            return None
+
     async def get_financial_data(self, symbol: str, report_type: str = "annual") -> dict[str, Any] | None:
-        """获取财务数据（简化版 - 仅返回最新一期主要指标）"""
+        """获取财务数据（合并 fina_indicator + income + balancesheet）
+
+        使用三个 Tushare Pro API 合并返回：
+          - fina_indicator (基础200分): eps/roe/roa/gross_margin/net_margin/ocfps/bps
+          - income (需200-600分): 营业总收入(revenue)/营业利润(operate_profit)/净利润(n_income)
+          - balancesheet (需200-600分): 总资产/总负债/股东权益
+
+        任意 API 失败仅记警告，不影响其他 API 的结果。
+        """
         if not self.connected or not self.api:
             return None
         try:
             ts_code = self._normalize_symbol(symbol)
 
-            # 获取最新一期主要财务指标
-            df = self._api_call_with_retry(
-                self.api.fina_indicator,
-                ts_code=ts_code,
-                fields="ts_code,end_date,eps,roe,roa,gross_margin,net_margin,"
-                       "profit_dedu,ocfps,bps,dt_eps,total_assets,total_liab,total_hldr_eqy_ex_min",
-            )
-            if df is not None and not df.empty:
-                latest = df.iloc[0]
-                return {
-                    "code": symbol,
-                    "ts_code": ts_code,
-                    "end_date": str(latest.get("end_date", "")),
-                    "eps": float(latest["eps"]) if latest.get("eps") is not None else None,
-                    "roe": float(latest["roe"]) if latest.get("roe") is not None else None,
-                    "roa": float(latest["roa"]) if latest.get("roa") is not None else None,
-                    "gross_margin": float(latest["gross_margin"]) if latest.get("gross_margin") is not None else None,
-                    "net_margin": float(latest["net_margin"]) if latest.get("net_margin") is not None else None,
-                    "total_assets": float(latest["total_assets"]) if latest.get("total_assets") is not None else None,
-                    "total_liab": float(latest["total_liab"]) if latest.get("total_liab") is not None else None,
-                    "total_equity": float(latest["total_hldr_eqy_ex_min"]) if latest.get("total_hldr_eqy_ex_min") is not None else None,
-                }
-            return None
+            result: dict[str, Any] = {
+                "code": symbol,
+                "ts_code": ts_code,
+                "end_date": "",
+            }
+
+            # ── 1. fina_indicator ──
+            try:
+                df = self._api_call_with_retry(
+                    self.api.fina_indicator,
+                    ts_code=ts_code,
+                    fields="ts_code,end_date,eps,roe,roa,gross_margin,net_margin,"
+                           "profit_dedu,ocfps,bps,dt_eps,total_assets,total_liab,total_hldr_eqy_ex_min",
+                )
+                if df is not None and not df.empty:
+                    row = df.iloc[0]
+                    result["end_date"] = str(row.get("end_date", ""))
+                    for col in ("eps", "roe", "roa", "gross_margin", "net_margin",
+                                "profit_dedu", "ocfps", "bps", "dt_eps",
+                                "total_assets", "total_liab", "total_hldr_eqy_ex_min"):
+                        val = row.get(col)
+                        result[col] = float(val) if val is not None else None
+                    self.logger.info("✅ Tushare fina_indicator 成功: %s", ts_code)
+            except Exception as e:
+                self.logger.warning("⚠️ Tushare fina_indicator 失败(非致命): %s", e)
+
+            # ── 2. income（利润表）─ 营业总收入/营业利润/净利润 ──
+            try:
+                df_income = self._api_call_with_retry(
+                    self.api.income,
+                    ts_code=ts_code,
+                    fields="ts_code,end_date,revenue,operate_profit,n_income,"
+                           "total_operating_revenue,performance_notice",
+                )
+                if df_income is not None and not df_income.empty:
+                    row = df_income.iloc[0]
+                    for col in ("revenue", "operate_profit", "n_income", "total_operating_revenue"):
+                        val = row.get(col)
+                        result[col] = float(val) if val is not None else None
+                    # 优先使用端日期更近的 end_date
+                    ed = row.get("end_date")
+                    if ed and str(ed) > str(result.get("end_date", "")):
+                        result["end_date"] = str(ed)
+                    self.logger.info("✅ Tushare income 成功: %s", ts_code)
+            except Exception as e:
+                self.logger.warning("⚠️ Tushare income 失败(非致命): %s", e)
+
+            # ── 3. balancesheet（资产负债表）─ 总资产/总负债/股东权益 ──
+            try:
+                df_bs = self._api_call_with_retry(
+                    self.api.balancesheet,
+                    ts_code=ts_code,
+                    fields="ts_code,end_date,total_assets,total_liab,total_hldr_eqy_ex_min",
+                )
+                if df_bs is not None and not df_bs.empty:
+                    row = df_bs.iloc[0]
+                    for col in ("total_assets", "total_liab", "total_hldr_eqy_ex_min"):
+                        val = row.get(col)
+                        # 只有 fina_indicator 中该字段为 None 时才覆盖
+                        if result.get(col) is None and val is not None:
+                            result[col] = float(val)
+                    ed = row.get("end_date")
+                    if ed and str(ed) > str(result.get("end_date", "")):
+                        result["end_date"] = str(ed)
+                    self.logger.info("✅ Tushare balancesheet 成功: %s", ts_code)
+            except Exception as e:
+                self.logger.warning("⚠️ Tushare balancesheet 失败(非致命): %s", e)
+
+            # 兼容旧字段名 total_equity (部分消费者仍用此名)
+            if result.get("total_hldr_eqy_ex_min") is not None and result.get("total_equity") is None:
+                result["total_equity"] = result["total_hldr_eqy_ex_min"]
+
+            return result if any(v is not None for v in result.values() if not isinstance(v, str)) else None
         except Exception as e:
             self.logger.error("❌ Tushare 获取财务数据失败: %s", e)
+            return None
+
+    def get_financial_data_sync(self, symbol: str, report_type: str = "annual") -> dict[str, Any] | None:
+        """获取财务数据（同步版本，避免 EventLoopPool 阻塞）
+
+        与 get_financial_data 逻辑完全一致，仅无 async。
+        合并 fina_indicator + income + balancesheet 三个 API。
+        """
+        if not self.connected or not self.api:
+            return None
+        try:
+            ts_code = self._normalize_symbol(symbol)
+
+            result: dict[str, Any] = {
+                "code": symbol,
+                "ts_code": ts_code,
+                "end_date": "",
+            }
+
+            # ── 1. fina_indicator ──
+            try:
+                df = self._api_call_with_retry(
+                    self.api.fina_indicator,
+                    ts_code=ts_code,
+                    fields="ts_code,end_date,eps,roe,roa,gross_margin,net_margin,"
+                           "profit_dedu,ocfps,bps,dt_eps,total_assets,total_liab,total_hldr_eqy_ex_min",
+                )
+                if df is not None and not df.empty:
+                    row = df.iloc[0]
+                    result["end_date"] = str(row.get("end_date", ""))
+                    for col in ("eps", "roe", "roa", "gross_margin", "net_margin",
+                                "profit_dedu", "ocfps", "bps", "dt_eps",
+                                "total_assets", "total_liab", "total_hldr_eqy_ex_min"):
+                        val = row.get(col)
+                        result[col] = float(val) if val is not None else None
+                    self.logger.info("✅ Tushare fina_indicator 成功(sync): %s", ts_code)
+            except Exception as e:
+                self.logger.warning("⚠️ Tushare fina_indicator 失败(sync,非致命): %s", e)
+
+            # ── 2. income（利润表）─ 营业总收入/营业利润/净利润 ──
+            try:
+                df_income = self._api_call_with_retry(
+                    self.api.income,
+                    ts_code=ts_code,
+                    fields="ts_code,end_date,revenue,operate_profit,n_income,"
+                           "total_operating_revenue,performance_notice",
+                )
+                if df_income is not None and not df_income.empty:
+                    row = df_income.iloc[0]
+                    for col in ("revenue", "operate_profit", "n_income", "total_operating_revenue"):
+                        val = row.get(col)
+                        result[col] = float(val) if val is not None else None
+                    ed = row.get("end_date")
+                    if ed and str(ed) > str(result.get("end_date", "")):
+                        result["end_date"] = str(ed)
+                    self.logger.info("✅ Tushare income 成功(sync): %s", ts_code)
+            except Exception as e:
+                self.logger.warning("⚠️ Tushare income 失败(sync,非致命): %s", e)
+
+            # ── 3. balancesheet（资产负债表）─ 总资产/总负债/股东权益 ──
+            try:
+                df_bs = self._api_call_with_retry(
+                    self.api.balancesheet,
+                    ts_code=ts_code,
+                    fields="ts_code,end_date,total_assets,total_liab,total_hldr_eqy_ex_min",
+                )
+                if df_bs is not None and not df_bs.empty:
+                    row = df_bs.iloc[0]
+                    for col in ("total_assets", "total_liab", "total_hldr_eqy_ex_min"):
+                        val = row.get(col)
+                        if result.get(col) is None and val is not None:
+                            result[col] = float(val)
+                    ed = row.get("end_date")
+                    if ed and str(ed) > str(result.get("end_date", "")):
+                        result["end_date"] = str(ed)
+                    self.logger.info("✅ Tushare balancesheet 成功(sync): %s", ts_code)
+            except Exception as e:
+                self.logger.warning("⚠️ Tushare balancesheet 失败(sync,非致命): %s", e)
+
+            # 兼容旧字段名 total_equity
+            if result.get("total_hldr_eqy_ex_min") is not None and result.get("total_equity") is None:
+                result["total_equity"] = result["total_hldr_eqy_ex_min"]
+
+            return result if any(v is not None for v in result.values() if not isinstance(v, str)) else None
+        except Exception as e:
+            self.logger.error("❌ Tushare 获取财务数据失败(sync): %s", e)
             return None
 
     async def get_stock_list(self, market: str | None = None) -> list[dict[str, Any]] | None:

@@ -576,48 +576,59 @@ def _create_moa_node_fn(state: dict, llm) -> dict:
     # 1. 收集所有模块输出
     collection = _build_moa_collection(state)
 
-    # 2. 尝试 MoA LLM 综合
-    try:
-        prompt = _build_moa_prompt(collection)
+    # 2. 尝试 MoA LLM 综合（L4: 最多3次重试）
+    from tradingagents.agents.utils.agent_utils import safe_llm_invoke, safe_extract_content
 
-        from tradingagents.agents.utils.agent_utils import safe_llm_invoke, safe_extract_content
+    max_attempts = 3
+    last_error = None
+    last_raw = ""
 
-        result = safe_llm_invoke(llm, [{"role": "user", "content": prompt}])
-        raw = safe_extract_content(result)
+    for attempt in range(1, max_attempts + 1):
+        try:
+            prompt = _build_moa_prompt(collection)
+            result = safe_llm_invoke(llm, [{"role": "user", "content": prompt}])
+            raw = safe_extract_content(result)
+            last_raw = raw or ""
 
-        if raw and len(raw.strip()) > 10:
-            json_str = _json_strip_inline(raw)
-            parsed = json.loads(json_str)
-            # 检查 schema 完整性
-            if _MOA_OUTPUT_SCHEMA.issubset(parsed.keys()):
+            if raw and len(raw.strip()) > 10:
+                json_str = _json_strip_inline(raw)
+                parsed = json.loads(json_str)
+                # L4: 宽松 schema 检查 — 缺失字段用默认值填充
                 action, confidence, probs, reasoning, key_factors = _validate_moa_output(parsed)
-                logger.info(
-                    "[MoA] ✅ 综合完成: action=%s, confidence=%.4f, reasoning_len=%d",
-                    action,
-                    confidence,
-                    len(reasoning),
-                )
-                return {
-                    "fused_decision": {
-                        "decision": action,
-                        "confidence": confidence,
-                        "probabilities": probs,
-                        "reasoning": reasoning,
-                        "key_factors": key_factors,
-                        "source": "moa_synthesis",
-                    },
-                }
+                # 只要 action 和 reasoning 存在就算成功
+                if action and reasoning and len(reasoning.strip()) > 5:
+                    logger.info(
+                        "[MoA] ✅ 综合完成 (attempt=%d/%d): action=%s, confidence=%.4f, reasoning_len=%d",
+                        attempt, max_attempts, action, confidence, len(reasoning),
+                    )
+                    return {
+                        "fused_decision": {
+                            "decision": action,
+                            "confidence": confidence,
+                            "probabilities": probs,
+                            "reasoning": reasoning,
+                            "key_factors": key_factors,
+                            "source": "moa_synthesis",
+                        },
+                    }
+                else:
+                    logger.warning(f"[MoA] ⚠️ 输出内容不足 (attempt=%d/%d): action={action!r}, reasoning_len={len(reasoning or '')}", attempt, max_attempts)
+                    last_error = "insufficient_output"
             else:
-                logger.warning(f"[MoA] ⚠️ JSON schema 不完整: keys={list(parsed.keys())}, 回退BMA")
-        else:
-            logger.warning(f"[MoA] ⚠️ LLM 返回空内容 (raw={raw!r}), 回退BMA")
-    except json.JSONDecodeError as e:
-        logger.warning(f"[MoA] ⚠️ JSON 解析失败: {e}, 回退BMA")
-    except Exception as e:
-        logger.warning(f"[MoA] ⚠️ 综合器异常: {type(e).__name__}: {e}, 回退BMA")
+                logger.warning(f"[MoA] ⚠️ LLM 返回内容过短 (attempt=%d/%d): raw_len={len(raw or '')}", attempt, max_attempts)
+                last_error = "empty_output"
+        except json.JSONDecodeError as e:
+            logger.warning(f"[MoA] ⚠️ JSON 解析失败 (attempt=%d/%d): {e}", attempt, max_attempts)
+            last_error = str(e)
+        except Exception as e:
+            logger.warning(f"[MoA] ⚠️ 综合器异常 (attempt=%d/%d): {type(e).__name__}: {e}", attempt, max_attempts)
+            last_error = str(e)
+            if attempt < max_attempts:
+                import time
+                time.sleep(0.5)  # 重试前短暂等待
 
-    # 3. 退化路径：BMA 数值融合
-    logger.info("[MoA] ⤵️ 回退到 BMA 数值融合")
+    # 3. 退化路径：BMA 数值融合（所有重试失败后）
+    logger.info("[MoA] ⤵️ %d 次尝试全部失败 (%s)，回退到 BMA 数值融合", max_attempts, last_error)
     return fusion_node(state)
 
 
@@ -1219,14 +1230,15 @@ def fusion_node(state) -> dict:
         # 扩散模型概率（来自 Phase 1.3 增强）
         diff_probs = diff_decision.get("action_probs", [1/3, 1/3, 1/3])
         diff_conf = diff_decision.get("confidence", 0.0)
-        w_diff = min(diff_conf * 0.5, 0.4)  # 置信度调制
+        diffusion_weight_config = state.get("diffusion_weight", 0.4)  # L3: 从 config 读取
+        w_diff = min(diff_conf * 0.5, diffusion_weight_config)  # L3: 使用配置权重而非硬编码 0.4
 
     # ===== 信号 1: 交易员 =====
     trader_probs = _extract_trader_probs(trader_plan)
-    w_trader = 0.35  # 固定权重
+    w_trader = 0.35  # 固定权重（将被动态权重调制）
 
     # ===== 信号 2: 扩散模型 =====
-    # diff_probs 已在上方获取
+    # diff_probs + w_diff 已在上方获取
 
     # ===== 信号 3: AIF-EFE（来自融合点 #1） =====
     fusion_efe = state.get("fusion_efe_scores", {})
@@ -1240,6 +1252,28 @@ def fusion_node(state) -> dict:
     else:
         aif_probs = [1/3, 1/3, 1/3]
         w_aif = 0.0
+
+    # ===== L8: 动态权重校准（从历史准确率追踪器读取） =====
+    # 在冷启动时返回等权重 → 不影响现有逻辑
+    # 积累数据后校准各模块的相对权重
+    try:
+        from tradingagents.graph.fusion_weight_tracker import fusion_tracker
+        _tw = fusion_tracker.get_weights()
+        # scale_factor = 相对均匀值的倍数（冷启动=1.0，有数据后漂移）
+        _scale_t = _tw.get("trader", 1/3) * 3
+        _scale_d = _tw.get("diffusion", 1/3) * 3
+        _scale_a = _tw.get("aif", 1/3) * 3
+        w_trader = w_trader * _scale_t
+        w_diff = w_diff * _scale_d
+        w_aif = w_aif * _scale_a
+        logger.info("[Fusion-BMA] 📊 动态权重校准: 原={trader=%.3f,diff=%.3f,aif=%.3f} "
+                     "调后={trader=%.3f,diff=%.3f,aif=%.3f} (scale=%s)",
+                     0.35, w_diff / _scale_d if _scale_d > 0 else 0,
+                     w_aif / _scale_a if _scale_a > 0 else 0,
+                     w_trader, w_diff, w_aif,
+                     f"t={_scale_t:.2f},d={_scale_d:.2f},a={_scale_a:.2f}")
+    except Exception:
+        pass  # 追踪器不可用不影响核心逻辑
 
     # ===== BMA 融合 =====
     log_fused = np.zeros(3)
@@ -1278,6 +1312,7 @@ def fusion_node(state) -> dict:
             "confidence": float(fused_probs[best_idx]),
             "probabilities": [float(p) for p in fused_probs],
             "weights": {"trader": w_trader, "diffusion": w_diff, "aif": w_aif},
+            "fusion_weight": float(fused_probs[best_idx]),  # L1: 标量键，兼容旧消费者
             "trader_weight": w_trader,
             "diff_weight": w_diff,
             "source": "bma_fusion",

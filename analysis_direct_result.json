@@ -1,0 +1,30 @@
+{
+  "status": "success",
+  "company": "平安银行",
+  "stock_code": "000001",
+  "trade_date": "2026-06-10",
+  "decision": {
+    "action": "卖出",
+    "target_price": 9.0,
+    "confidence": 0.55,
+    "risk_score": 0.8,
+    "reasoning": "经营现金流暴跌76%揭示资产质量结构性问题，被剔除富时A50导致至少15-20亿被动资金流出，技术面空头排列且RSI钝化，量化模块一致建议卖出。",
+    "_json_mode_used": false,
+    "model_info": "NormalizedChatOpenAI:deepseek-v4-flash",
+    "tokens_used": 99355,
+    "token_detail": {
+      "deep": {
+        "input_tokens": 17324,
+        "output_tokens": 5476,
+        "total": 22800
+      },
+      "quick": {
+        "input_tokens": 61780,
+        "output_tokens": 14775,
+        "total": 76555
+      }
+    }
+  },
+  "analysis_elapsed_seconds": 341.6768126487732,
+  "total_elapsed_seconds": 345.7225811481476
+}

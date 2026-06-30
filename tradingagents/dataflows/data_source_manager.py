@@ -850,7 +850,7 @@ class DataSourceManager:
 
                 provider = get_tushare_provider()
                 provider.connect_sync()
-                df = self._run_async_in_new_loop(provider.get_historical_data(symbol, start_date, end_date, period=period))  # type: ignore[arg-type]
+                df = provider.get_historical_data_sync(symbol, start_date, end_date, period=period)
 
             if df is not None and not df.empty:
                 logger.info(f"✅ [DataFrame接口] 从 {self.current_source.value} 获取成功: {len(df)}条")
@@ -869,10 +869,10 @@ class DataSourceManager:
                         df = adapter.get_historical_data(symbol, start_date, end_date, period=period)
                     elif source == ChinaDataSource.TUSHARE:
                         from .providers.china.tushare import get_tushare_provider
-
                         provider = get_tushare_provider()
+
                         provider.connect_sync()
-                        df = self._run_async_in_new_loop(provider.get_historical_data(symbol, start_date, end_date, period=period))  # type: ignore[arg-type]
+                        df = provider.get_historical_data_sync(symbol, start_date, end_date, period=period)
 
                     if df is not None and not df.empty:
                         logger.info(f"✅ [DataFrame接口] 降级到 {source.value} 成功: {len(df)}条")
@@ -1163,14 +1163,12 @@ class DataSourceManager:
                 return f"❌ Tushare连接失败: {symbol}"
 
             # 获取历史数据
-            data = self._run_async_in_new_loop(
-                provider.get_historical_data(symbol, start_date, end_date, period),
-            )
+            data = provider.get_historical_data_sync(symbol, start_date, end_date, period)
 
             if data is not None and not data.empty:
                 # 获取股票基本信息
                 try:
-                    stock_info = self._run_async_in_new_loop(provider.get_stock_basic_info(symbol))
+                    stock_info = provider.get_stock_basic_info_sync(symbol)
                     stock_name = stock_info.get("name", f"股票{symbol}") if stock_info else f"股票{symbol}"
                 except Exception as e:
                     logger.warning(f"⚠️ [Tushare] 获取股票信息失败: {e}")
@@ -1493,7 +1491,7 @@ class DataSourceManager:
             if not provider.connected:
                 provider.connect_sync()
             if provider.connected:
-                result = self._run_async_in_new_loop(provider.get_stock_basic_info(symbol))
+                result = provider.get_stock_basic_info_sync(symbol)
                 if result and result.get("name") and result["name"] != f"股票{symbol}":
                     logger.info(f"✅ [数据来源: Tushare] 降级成功获取股票信息: {symbol}")
                     return result  # type: ignore[return-value]
@@ -1755,7 +1753,7 @@ class DataSourceManager:
             if not provider.connected:
                 provider.connect_sync()
             if provider.connected:
-                fin_data = self._run_async_in_new_loop(provider.get_financial_data(symbol))
+                fin_data = provider.get_financial_data_sync(symbol)
                 if fin_data:
                     logger.info(f"✅ [数据来源: Tushare] 获取财务数据成功: {symbol}")
                     return self._generate_fundamentals_analysis(symbol)

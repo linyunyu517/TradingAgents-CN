@@ -981,6 +981,13 @@ class HPCLoopManager:
                 hpc_config.meta_learning_rate = config["meta_learning_rate"]
             if "meta_cycle_interval" in config:
                 hpc_config.meta_cycle_interval = config["meta_cycle_interval"]
+            # ── L6: L-IWM / HSR-MC 开关映射 ──
+            if "l_iwm_enabled" in config:
+                hpc_config.l_iwm_enabled = config["l_iwm_enabled"]
+            if "hsrc_mc_enabled" in config:
+                hpc_config.hsrc_mc_enabled = config["hsrc_mc_enabled"]
+            if "diffusion_enabled" in config:
+                hpc_config.diffusion_enabled = config["diffusion_enabled"]
             self.config = hpc_config
         else:
             self.config = HPCLoopConfig.from_env()
@@ -1143,6 +1150,8 @@ class HPCLoopManager:
             # HSR-MC 特征
             "hsrc_mc_enabled": self.config.hsrc_mc_enabled,
             "hsrc_mc_initialized": (self.config.hsrc_mc_enabled and self.hsrc_mc_manager is not None),
+            # L5: AIF 引擎状态（从 aif_engine_manager 读取，兼容无 manager 的情况）
+            "aif_engine": getattr(self, 'aif_engine_manager', None) is not None and self.aif_engine_manager.enabled,
         }
 
         return state

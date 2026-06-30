@@ -32,7 +32,7 @@ def test_api_key_validation():
         ("your-test-key", False, "占位符 - your- 前缀"),
         ("some_key_here", False, "占位符 - _here 后缀"),
         ("some-key-here", False, "占位符 - -here 后缀"),
-        ("sk-your-siliconflow-api-key", True, "有效的 API Key"),
+        ("sk-990547695d6046cf9be4e8d095235d91", True, "有效的 API Key"),
         ("sk-c64f9c504be1496f943843f553e3d6ee", True, "有效的 API Key"),
         ("AIzaSyC3JdZVjblI0rfT_SNXXL5a4kvZ13_12CE", True, "有效的 Google API Key"),
         ("bce-v3/ALTAK-ZV1T8VLLSFYvSPAzVthhY/d364f2499819c1e08dd2e84c7cc5a9ab6bac895f", True, "有效的千帆 API Key"),
@@ -41,8 +41,8 @@ def test_api_key_validation():
             True,
             "有效的 OpenRouter API Key",
         ),
-        ('"sk-your-siliconflow-api-key"', True, "带引号的有效 API Key"),
-        ("'sk-your-siliconflow-api-key'", True, "带单引号的有效 API Key"),
+        ('"sk-990547695d6046cf9be4e8d095235d91"', True, "带引号的有效 API Key"),
+        ("'sk-990547695d6046cf9be4e8d095235d91'", True, "带单引号的有效 API Key"),
     ]
 
     print("\n" + "=" * 80)

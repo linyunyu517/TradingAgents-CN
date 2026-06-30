@@ -10,6 +10,9 @@ from tradingagents.agents.utils.agent_utils import (
     is_data_fetch_failed,  # [PR #2] ContextVar 数据源故障检测
 )
 
+# 🧠 [渐进辩论摘要] 导入关键点提取工具
+from tradingagents.agents.utils.debate_utils import extract_debate_key_points, merge_key_points
+
 # 🔧 [H10 数据源全故障降级] 使用 agent_utils 公共函数 is_report_empty / are_all_reports_empty
 
 
@@ -146,6 +149,11 @@ def create_bull_researcher(llm, memory):
             else "Bull Analyst: (内容为空)"
         )
 
+        # 🧠 [渐进辩论摘要] 从本轮发言中提取关键论点（纯规则，~1ms）
+        key_points = extract_debate_key_points(argument, "Bull")
+        existing_summary = investment_debate_state.get("debate_summary", "")
+        new_summary = merge_key_points(existing_summary, key_points)
+
         new_count = investment_debate_state["count"] + 1
         logger.info(f"🐂 [多头研究员] 发言完成，计数: {investment_debate_state['count']} -> {new_count}")
 
@@ -155,6 +163,7 @@ def create_bull_researcher(llm, memory):
             "bear_history": investment_debate_state.get("bear_history", ""),
             "current_response": argument,
             "count": new_count,
+            "debate_summary": new_summary,
         }
 
         return {"investment_debate_state": new_investment_debate_state}

@@ -264,8 +264,79 @@ scripts/deployment/stage_local_vendors.ps1
 scripts/test_time_serialization.py
 scripts/create_mongodb_admin.py
 
-# Privacy files - DO NOT COMMIT
+# ========== Privacy & Security ==========
+# Credential config files (contain API keys, tokens)
+config/credentials.*
 config/credentials.env
-task_info.json
-.last_task_id.txt
 
+# ========== Temporary debug/scaffold scripts (not part of the project) ==========
+# One-off debug scripts, diagnostic tools, scaffold code
+_*.py
+_*.json
+_*.md
+_*.txt
+
+# ========== Runtime artifacts ==========
+# Model checkpoints (not source code)
+checkpoints/
+
+# Local model files (e.g. bge-m3, sentence-transformers)
+models/
+
+# Startup logs
+startup_*.txt
+startup_err.txt
+startup_log.txt
+
+# Runtime state files
+task_info.json
+fusion_final_result.json
+
+# Temporary test files
+test_ts.py
+test_ts2.py
+test_tushare_windows.py
+
+# Analysis debug output
+hpc_log_matches*.txt
+
+# ========== Internal planning & working docs ==========
+# Architecture decision records
+docs/adr/
+
+# Full understanding docs (internal reference)
+docs/PROJECT_FULL_UNDERSTANDING.md
+docs/TIA_Phase5d-1_20x500_Fixes.md
+
+# Code-dna session files
+.dna/
+
+# Internal planning directory
+plans/
+
+# ========== MCP / AI tool configs ==========
+# MCP profiles, AI workspace configs (local)
+.mcp*.json
+.opencode/
+
+# Root-level analysis reports (internal diagnostics, not source code)
+/analysis_reports/
+
+# Frontend temp fix files (build diagnostics, not source)
+/frontend/*.cjs
+/frontend/ts_*.txt
+/frontend/vue-tsc-*.txt
+
+# Root-level temp/reports
+/analysis_result_sample.json
+/gap-analysis-report.md
+/mypy_output_clean.txt
+/hpc_*.txt
+/rca-*.txt
+/redeploy.bat*.bak
+
+# Root-level temp scripts
+/tmp_test_token.py
+/ws_validate.py
+/0
+/0.5.0

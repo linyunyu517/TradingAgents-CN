@@ -13,7 +13,7 @@ def create_research_manager(llm, memory):
     def research_manager_node(state) -> dict:
         ticker = state["company_of_interest"]
         instrument_context = build_instrument_context(ticker)
-        history = state["investment_debate_state"].get("history", "")
+        debate_summary = state["investment_debate_state"].get("debate_summary", "")
         market_research_report = state["market_report"]
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
@@ -70,8 +70,8 @@ def create_research_manager(llm, memory):
 基本面分析：{fundamentals_report}
 
 以下是辩论：
-辩论历史：
-{history}
+辩论要点摘要：
+{debate_summary}
 
 请用中文撰写所有分析内容和建议。"""
 
@@ -80,7 +80,7 @@ def create_research_manager(llm, memory):
         estimated_tokens = int(prompt_length / 1.8)
 
         logger.info("📊 [Research Manager] Prompt 统计:")
-        logger.info(f"   - 辩论历史长度: {len(history)} 字符")
+        logger.info(f"   - 辩论摘要长度: {len(debate_summary)} 字符")
         logger.info(f"   - 总 Prompt 长度: {prompt_length} 字符")
         logger.info(f"   - 估算输入 Token: ~{estimated_tokens} tokens")
 

@@ -352,6 +352,26 @@ def _extract_hpc_reports(state: Any) -> dict[str, str]:
 
     # -- 4. HPC 记忆报告 ------------------------------------------------
     memory_parts: list[str] = []
+    # -- L7: HPC 状态诊断报告（enabled_features + step 信息）-----
+    diag_parts: list[str] = []
+    ef = hpc_state.get("enabled_features", {})
+    if ef and isinstance(ef, dict):
+        active = [k for k, v in ef.items() if v]
+        if active:
+            diag_parts.append(f"【已启用模块】{', '.join(sorted(active))}")
+    step = hpc_state.get("step_counter")
+    if step is not None:
+        diag_parts.append(f"【HPC执行步数】{step}")
+    meta = hpc_state.get("meta_data")
+    if isinstance(meta, dict) and meta:
+        meta_str = "; ".join(f"{k}={v}" for k, v in list(meta.items())[:5])
+        if meta_str:
+            diag_parts.append(f"【元数据】{meta_str}")
+    if diag_parts:
+        reports["hpc_diagnostics_report"] = "\n".join(diag_parts)
+
+    # -- 4. HPC 记忆报告 ------------------------------------------------
+    memory_parts: list[str] = []
     if hpc_state.get("memory_trace"):
         mem = hpc_state["memory_trace"]
         if isinstance(mem, list):
@@ -413,8 +433,15 @@ def _extract_hpc_reports(state: Any) -> dict[str, str]:
         fused = state.get("fused_decision", {})
         if fused and isinstance(fused, dict):
             fusion_parts.append(f"【融合来源】{fused.get('source', 'unknown')}")
-            fusion_parts.append(f"【融合权重】{fused.get('fusion_weight', 0):.4f}")
-            logger.info(f"[HPC-EXTRACT] 提取到融合决策: source={fused.get('source')}")
+            fusion_weight = fused.get('fusion_weight', 0)
+            fusion_parts.append(f"【融合权重】{fusion_weight:.4f}")
+            # L2: 输出各模块权重明细
+            weights = fused.get('weights', {})
+            if weights and isinstance(weights, dict):
+                w_detail = " | ".join(f"{k}={v:.3f}" for k, v in weights.items() if isinstance(v, (int, float)))
+                if w_detail:
+                    fusion_parts.append(f"【模块权重】{w_detail}")
+            logger.info(f"[HPC-EXTRACT] 提取到融合决策: source={fused.get('source')}, fusion_weight={fusion_weight:.4f}")
 
         efe = state.get("fusion_efe_scores", {})
         if efe and isinstance(efe, dict):
@@ -433,6 +460,7 @@ def _extract_hpc_reports(state: Any) -> dict[str, str]:
         "hpc_prediction_error_report": error_parts,
         "diffusion_report": diffusion_parts,
         "fusion_report": fusion_parts,
+        "hpc_diagnostics_report": diag_parts,  # L7: HPC 状态诊断
     }
 
     for report_name, parts in section_map.items():
@@ -549,6 +577,20 @@ def create_analysis_config(request: SingleAnalysisRequest, user_id: str, task_id
         # 🔧 [Plan C Fix 5] 硬编码默认值：确保即使 ConfigService 不可用时也有完整的分析师列表
         _DEFAULT_ANALYSTS = ["market", "social", "news", "fundamentals"]
         selected_analysts = config.get("selected_analysts", _DEFAULT_ANALYSTS)
+
+    # 🔧 [EventLoopPool Fix] 中文分析师名 → 英文内部名 归一化
+    # 前端可能传中文名（市场分析师/基本面分析师/新闻分析师/社交媒体分析师），
+    # 而 graph/setup.py 的 should_continue_{analyst_type} 和 GraphNode 只认英文小写名。
+    _ANALYST_NAME_MAP = {
+        "市场分析师": "market",
+        "基本面分析师": "fundamentals",
+        "新闻分析师": "news",
+        "社交媒体分析师": "social",
+    }
+    selected_analysts = [
+        _ANALYST_NAME_MAP.get(analyst, analyst)
+        for analyst in selected_analysts
+    ]
 
     # 🐛 [BUG-038 Fix D] 默认模型名使用 DeepSeek API 支持的名称
     #   DeepSeek API（https://api.deepseek.com）支持的模型名：
